@@ -22,23 +22,25 @@ function matchPatterns(value) {
     return false;
 }
 
-function cloakText() {
+function applyFilter(filter) {
     const elements = document.querySelectorAll('body *');
     elements.forEach(element => {
         element.childNodes.forEach(child => {
             if (child.nodeType === Node.TEXT_NODE) {
                 if (matchPatterns(child.nodeValue)) {
-                    element.style.filter = "blur(5px)";
+                    element.style.filter = filter;
                 }
             }
         });
         title = element.getAttribute('title');
         if (title && matchPatterns(title)) {
-            element.style.filter = "blur(5px)";
+            element.style.filter = filter;
         }
     });
+}
 
-
+function cloakText() {
+    applyFilter("blur(5px)");
 }
 
 function cloakTextAndStartObserving() {
@@ -55,21 +57,7 @@ function cloakTextAndStartObserving() {
 function unCloakTextAndStopObserving() {
     window.cloakObserver && window.cloakObserver.disconnect();
     window.cloakObserver = null;
-
-    const elements = document.querySelectorAll('body *');
-    elements.forEach(element => {
-        element.childNodes.forEach(child => {
-            if (child.nodeType === Node.TEXT_NODE) {
-                if (matchPatterns(child.nodeValue)) {
-                    element.style.filter = "none";
-                }
-            }
-            title = element.getAttribute('title');
-            if (title && matchPatterns(title)) {
-                element.style.filter = "none";
-            }
-        });
-    });
+    applyFilter("none");
 }
 
 window.unCloakTextAndStopObserving = unCloakTextAndStopObserving;
