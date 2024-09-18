@@ -16,21 +16,21 @@ limitations under the License.
 
 * {
     display: none !important;
-  }
+}
 
-  html,
-  body,
-  *:has(article),
-  article,
-  article * {
+html,
+body,
+*:has(article),
+article,
+article * {
     display: revert !important;
-  }
+}
 
-  [role='navigation'] {
+[role='navigation'] {
     display: none !important;
-  }
+}
 
-  article {
+article {
     margin: auto;
     max-width: 700px;
-  }
+}
