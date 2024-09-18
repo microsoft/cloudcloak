@@ -1,7 +1,6 @@
 // MutationObserver to watch for changes in the DOM
-let observer = null;
-if (!observer) {
-    observer = new MutationObserver((mutationsList) => {
+if (!window.cloakObserver) {
+    window.cloakObserver = new MutationObserver((mutationsList) => {
         for (let mutation of mutationsList) {
             if (mutation.type === 'childList' || mutation.type === 'subtree') {
                 // Blur the text
@@ -46,7 +45,7 @@ function cloakTextAndStartObserving() {
     cloakText();
 
     // Start observing the whole document for changes
-    observer.observe(document.body, {
+    window.cloakObserver && window.cloakObserver.observe(document.body, {
         childList: true, // Watch for added/removed elements
         subtree: true,   // Watch the entire subtree of the document
         characterData: true // Watch for changes in text content
@@ -54,7 +53,8 @@ function cloakTextAndStartObserving() {
 }
 
 function unCloakTextAndStopObserving() {
-    observer && observer.disconnect();
+    window.cloakObserver && window.cloakObserver.disconnect();
+    window.cloakObserver = null;
 
     const elements = document.querySelectorAll('body *');
     elements.forEach(element => {
