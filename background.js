@@ -27,6 +27,11 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     chrome.scripting.executeScript({
       target: { tabId: details.tabId, frameIds: [details.frameId] },
       files: ['cloak.js']
+    }).then(() => {
+      chrome.scripting.executeScript({
+        target: { tabId: details.tabId, frameIds: [details.frameId] },
+        function: cloakTextAndStartObserving,
+      });
     });
   }
 }, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
@@ -50,13 +55,17 @@ chrome.action.onClicked.addListener(async (tab) => {
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
         files: ['cloak.js']
+      }).then(() => {
+        chrome.scripting.executeScript({
+          target: { tabId: tab.id, allFrames: true },
+          function: () => { cloakTextAndStartObserving(); },
+        })
       });
 
     } else if (nextState === 'OFF') {
-      // Restore the text
       chrome.scripting.executeScript({
         target: { tabId: tab.id, allFrames: true },
-        files: ['uncloak.js']
+        function: () => { unCloakTextAndStopObserving(); } ,
       });
     }
   }

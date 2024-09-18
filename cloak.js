@@ -1,5 +1,17 @@
-function matchPatterns(value)
-{
+// MutationObserver to watch for changes in the DOM
+let observer = null;
+if (!observer) {
+    observer = new MutationObserver((mutationsList) => {
+        for (let mutation of mutationsList) {
+            if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                // Blur the text
+                cloakText();
+            }
+        }
+    });
+}
+
+function matchPatterns(value) {
     const guidPattern = /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/;
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     const domainPattern = /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/;
@@ -15,7 +27,7 @@ function cloakText() {
     const elements = document.querySelectorAll('body *');
     elements.forEach(element => {
         element.childNodes.forEach(child => {
-           if (child.nodeType === Node.TEXT_NODE) {
+            if (child.nodeType === Node.TEXT_NODE) {
                 if (matchPatterns(child.nodeValue)) {
                     element.style.filter = "blur(5px)";
                 }
@@ -26,31 +38,39 @@ function cloakText() {
             element.style.filter = "blur(5px)";
         }
     });
+
+
 }
 
-cloakText();
+function cloakTextAndStartObserving() {
+    cloakText();
 
-// MutationObserver to watch for changes in the DOM
-let observer = new MutationObserver((mutationsList) => {
-    for (let mutation of mutationsList) {
-        if (mutation.type === 'childList' || mutation.type === 'subtree') {
-            // Blur the text
-            cloakText();
-        }
-    }
-});
+    // Start observing the whole document for changes
+    observer.observe(document.body, {
+        childList: true, // Watch for added/removed elements
+        subtree: true,   // Watch the entire subtree of the document
+        characterData: true // Watch for changes in text content
+    });
+}
 
-// Start observing the whole document for changes
-observer.observe(document.body, {
-    childList: true, // Watch for added/removed elements
-    subtree: true,   // Watch the entire subtree of the document
-    characterData: true // Watch for changes in text content
-});
+function unCloakTextAndStopObserving() {
+    observer && observer.disconnect();
 
-// // Function to stop the observer when requested
-// chrome.runtime.onMessage.addListener((request) => {
-//     if (request.action === "stopObserver") {
-//         observer.disconnect();
-//         console.log("Observer stopped.");
-//     }
-// });
+    const elements = document.querySelectorAll('body *');
+    elements.forEach(element => {
+        element.childNodes.forEach(child => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                if (matchPatterns(child.nodeValue)) {
+                    element.style.filter = "none";
+                }
+            }
+            title = element.getAttribute('title');
+            if (title && matchPatterns(title)) {
+                element.style.filter = "none";
+            }
+        });
+    });
+}
+
+window.unCloakTextAndStopObserving = unCloakTextAndStopObserving;
+window.cloakTextAndStartObserving = cloakTextAndStartObserving;
