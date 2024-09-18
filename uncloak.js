@@ -20,11 +20,11 @@ function unCloakText() {
                         element.style.filter = "none";
                 }
             }
-            title = element.getAttribute('title');
-            if (title && matchPatterns(title)) {
-                    element.style.filter = "none";
-            }
         });
+        title = element.getAttribute('title');
+        if (title && matchPatterns(title)) {
+                element.style.filter = "none";
+        }
     });
 }
 unCloakText();
