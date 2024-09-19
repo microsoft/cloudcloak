@@ -2,7 +2,19 @@ const extensions = [
     'https://portal.azure.com',
     'https://ms.portal.azure.com',
     'https://rc.portal.azure.com',
-    'https://preview.portal.azure.com'
+    'https://preview.portal.azure.com', 
+    'https://entra.microsoft.com', 
+    'https://intune.microsoft.com', 
+    'https://ai.azure.com', 
+    'https://admin.microsoft.com',
+    'https://sip.security.microsoft.com', 
+    'https://purview.microsoft.com',
+    'https://make.powerapps.com', 
+    'https://make.preview.powerapps.com',
+    'https://msazure.visualstudio.com', 
+    'https://github.com',
+    'https://copilotstudio.microsoft.com', 
+    'https://copilotstudio.preview.microsoft.com'
 ];
 
 async function loadScriptAndStartCloaking(tabId, frameIds, allFrames) {
