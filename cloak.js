@@ -1,11 +1,9 @@
 // MutationObserver to watch for changes in the DOM
 if (!window.cloakObserver) {
-    window.cloakObserver = new MutationObserver((mutationsList) => {
-        for (let mutation of mutationsList) {
-            if (mutation.type === 'childList' || mutation.type === 'subtree') {
-                // Blur the text
-                cloakText();
-            }
+    const cloakableMutations = ['childList', 'subtree'];
+    window.cloakObserver = new MutationObserver((mutationRecords) => {
+        if (mutationRecords.some((mutationRecord) => cloakableMutations.includes(mutationRecord.type))) {
+            cloakText();
         }
     });
 }
