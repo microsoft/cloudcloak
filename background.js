@@ -11,6 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+async function loadScriptAndStartCloaking(tabId, frameIds, allFrames) {
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames, frameIds },
+    files: ['cloak.js']
+  });
+  await chrome.scripting.executeScript({
+    target: { tabId, allFrames, frameIds },
+    function: () => { cloakTextAndStartObserving(); },
+  });
+}
+
 chrome.runtime.onInstalled.addListener(() => {
     chrome.action.setBadgeText({
         text: 'OFF'
@@ -23,16 +34,7 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     const currentState = await chrome.action.getBadgeText({ tabId: details.tabId });
 
     if (currentState === 'ON' && details.frameId !== 0) { // This is an iframe
-        await chrome.scripting.executeScript({
-            target: { tabId: details.tabId, frameIds: [details.frameId] },
-            files: ['cloak.js']
-        });
-
-        await chrome.scripting.executeScript({
-            target: { tabId: details.tabId, frameIds: [details.frameId] },
-            function: () => { cloakTextAndStartObserving(); },
-        });
-    
+        loadScriptAndStartCloaking(details.tabId, [details.frameId], false);  
     }
 }, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
 
@@ -52,16 +54,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
         if (nextState === 'ON') {
             // Blur the text
-            chrome.scripting.executeScript({
-                target: { tabId: tab.id, allFrames: true },
-                files: ['cloak.js']
-            }).then(() => {
-                chrome.scripting.executeScript({
-                    target: { tabId: tab.id, allFrames: true },
-                    function: () => { cloakTextAndStartObserving(); },
-                })
-            });
-
+            loadScriptAndStartCloaking(tab.id, null, true);
         } else if (nextState === 'OFF') {
             chrome.scripting.executeScript({
                 target: { tabId: tab.id, allFrames: true },
