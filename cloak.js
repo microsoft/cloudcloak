@@ -18,7 +18,7 @@ function matchPatterns(value) {
 function applyFilter(shouldCloak) {
     const filter = shouldCloak ? "blur(5px)" : "none";
     const maskText = "*****";
-    const elements = document.querySelectorAll('body *');
+    const elements = document.querySelectorAll("body *");
     for (const element of elements) {
         // Handle title
         const title = element.getAttribute("title");
@@ -28,7 +28,7 @@ function applyFilter(shouldCloak) {
             (!shouldCloak && maskTitle && matchPatterns(maskTitle))
         ) {
             element.style.filter = filter;
-            if (shouldCloak) { 
+            if (shouldCloak) {
                 element.setAttribute("title", maskText);
                 element.setAttribute("maskTitle", title);
             } else {
