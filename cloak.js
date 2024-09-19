@@ -22,19 +22,22 @@ function matchPatterns(value) {
 
 function applyFilter(filter) {
     const elements = document.querySelectorAll('body *');
-    elements.forEach(element => {
-        element.childNodes.forEach(child => {
-            if (child.nodeType === Node.TEXT_NODE) {
-                if (matchPatterns(child.nodeValue)) {
-                    element.style.filter = filter;
-                }
-            }
-        });
+    for (const element of elements) {
         title = element.getAttribute('title');
         if (title && matchPatterns(title)) {
             element.style.filter = filter;
+            continue;
         }
-    });
+        for (const child of element.childNodes) {
+            if (
+                (child.nodeType === Node.TEXT_NODE) &&
+                matchPatterns(child.nodeValue)
+            ) {
+                element.style.filter = filter;
+                break;
+            }
+        }
+    }
 }
 
 function cloakText() {
