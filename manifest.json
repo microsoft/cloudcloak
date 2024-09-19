@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Azure Cloak Mode",
-  "description": "Enable cloak mode on Azure Portal.",
+  "name": "Cloud Cloak",
+  "description": "Enables 'cloak mode' for Microsoft Cloud Portals",
   "version": "1.0",
   "icons": {
     "16": "images/icon-16.png",

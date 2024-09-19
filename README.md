@@ -1,6 +1,6 @@
-# Azure "Cloak Mode" Browser Extension
+# "Cloud Cloak" Browser Extension
 
-This is a browser extension for folks who might be streaming or presenting while simultaneously showing the Azure Portal. It does its very best to hide connection strings, email addresses, avatars, and anything that might show secure or personal information. It's not perfect, but it's 95% solid. The goal is to avoid any kind of information leakage when presenting or streaming while live coding and using the Azure Portal.
+This is a browser extension for folks who might be streaming or presenting while simultaneously showing one of the Microsoft Cloud Portals. It does its very best to hide connection strings, email addresses, avatars, and anything that might show secure or personal information. It's not perfect, but it's 95% solid. The goal is to avoid any kind of information leakage when presenting or streaming while live coding.
 
 ## Installing the Extension
 
@@ -15,7 +15,7 @@ This is a browser extension for folks who might be streaming or presenting while
 
 ## Using the Extension
 
-1. Navigate to the [Azure Portal](https://portal.azure.com/)
+1. Navigate to the [Azure Portal](https://portal.azure.com/), [Entra](https://entra.microsoft.com), [GitHub](https://github.com), etc.
 2. Click the extension icon in the toolbar to toggle it from `OFF` to `ON`
 3. Confirm that sensitive data like IP addresses, GUIDs, and email addresses are blurred-out
 
