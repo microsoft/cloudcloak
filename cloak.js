@@ -15,7 +15,8 @@ function matchPatterns(value) {
     return false;
 }
 
-function applyFilter(filter) {
+function applyFilter(shouldCloak) {
+    const filter = shouldCloak ? "blur(5px)" : "none";
     const elements = document.querySelectorAll('body *');
     for (const element of elements) {
         title = element.getAttribute('title');
@@ -36,7 +37,7 @@ function applyFilter(filter) {
 }
 
 function cloakText() {
-    applyFilter("blur(5px)");
+    applyFilter(true);
 }
 
 function cloakTextAndStartObserving() {
@@ -52,7 +53,7 @@ function cloakTextAndStartObserving() {
 function unCloakTextAndStopObserving() {
     window.cloakObserver && window.cloakObserver.disconnect();
     window.cloakObserver = null;
-    applyFilter("none");
+    applyFilter(false);
 }
 
 window.unCloakTextAndStopObserving = unCloakTextAndStopObserving;
