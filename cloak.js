@@ -1,11 +1,6 @@
 // MutationObserver to watch for changes in the DOM
 if (!window.cloakObserver) {
-    const cloakableMutations = ['childList', 'subtree'];
-    window.cloakObserver = new MutationObserver((mutationRecords) => {
-        if (mutationRecords.some((mutationRecord) => cloakableMutations.includes(mutationRecord.type))) {
-            cloakText();
-        }
-    });
+    window.cloakObserver = new MutationObserver(cloakText);
 }
 
 function matchPatterns(value) {
@@ -50,8 +45,7 @@ function cloakTextAndStartObserving() {
     // Start observing the whole document for changes
     window.cloakObserver && window.cloakObserver.observe(document.body, {
         childList: true, // Watch for added/removed elements
-        subtree: true,   // Watch the entire subtree of the document
-        characterData: true // Watch for changes in text content
+        subtree: true   // Watch the entire subtree of the document
     });
 }
 
