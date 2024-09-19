@@ -2,6 +2,8 @@
 
 This is a browser extension for folks who might be streaming or presenting while simultaneously showing one of the Microsoft Cloud Portals. It does its very best to hide connection strings, email addresses, avatars, and anything that might show secure or personal information. It's not perfect, but it's 95% solid. The goal is to avoid any kind of information leakage when presenting or streaming while live coding.
 
+You can consider this the next-version/update to [Azure Mask](https://github.com/clarkio/azure-mask/) (shout out to Brian Clark for his pioneering work and blessing for us to create this one)
+
 ## Installing the Extension
 
 1. [Download and unzip the latest version of the extension](https://github.com/microsoft/azurecloak/archive/refs/heads/main.zip) (or clone this repository)
