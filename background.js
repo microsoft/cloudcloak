@@ -11,7 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 chrome.runtime.onInstalled.addListener(() => {
     chrome.action.setBadgeText({
         text: 'OFF'
@@ -24,15 +23,16 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
     const currentState = await chrome.action.getBadgeText({ tabId: details.tabId });
 
     if (currentState === 'ON' && details.frameId !== 0) { // This is an iframe
-        chrome.scripting.executeScript({
+        await chrome.scripting.executeScript({
             target: { tabId: details.tabId, frameIds: [details.frameId] },
             files: ['cloak.js']
-        }).then(() => {
-            chrome.scripting.executeScript({
-                target: { tabId: details.tabId, frameIds: [details.frameId] },
-                function: cloakTextAndStartObserving,
-            });
         });
+
+        await chrome.scripting.executeScript({
+            target: { tabId: details.tabId, frameIds: [details.frameId] },
+            function: () => { cloakTextAndStartObserving(); },
+        });
+    
     }
 }, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
 
