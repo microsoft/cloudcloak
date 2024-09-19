@@ -17,13 +17,27 @@ function matchPatterns(value) {
 
 function applyFilter(shouldCloak) {
     const filter = shouldCloak ? "blur(5px)" : "none";
+    const maskText = "*****";
     const elements = document.querySelectorAll('body *');
     for (const element of elements) {
-        title = element.getAttribute('title');
-        if (title && matchPatterns(title)) {
+        // Handle title
+        const title = element.getAttribute("title");
+        const maskTitle = element.getAttribute("maskTitle");
+        if (
+            (shouldCloak && title && matchPatterns(title)) ||
+            (!shouldCloak && maskTitle && matchPatterns(maskTitle))
+        ) {
             element.style.filter = filter;
+            if (shouldCloak) { 
+                element.setAttribute("title", maskText);
+                element.setAttribute("maskTitle", title);
+            } else {
+                element.setAttribute("title", maskTitle);
+                element.removeAttribute("maskTitle");
+            }
             continue;
         }
+        // Handle children
         for (const child of element.childNodes) {
             if (
                 (child.nodeType === Node.TEXT_NODE) &&
