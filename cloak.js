@@ -4,15 +4,17 @@ if (!window.cloakObserver) {
 }
 
 function matchPatterns(value) {
-    const guidPattern = /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/;
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const domainPattern = /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/;
-    const ipv4Pattern = /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/;
-
-    if (guidPattern.test(value) || emailPattern.test(value) || domainPattern.test(value) || ipv4Pattern.test(value)) {
-        return true;
-    }
-    return false;
+    const regexArray = [
+        /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/, //guid
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, //email
+        /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/, //domain
+        /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, //ipv4
+        /^\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/, //us phone
+        /^(\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}$/, //uk phone
+        /^(\+91[\-\s]?)??(91)?\d{9}$/, //india phone
+        /^\+?[1-9]\d{1,14}$/ //intl phone
+    ];
+    return regexArray.some(regex => regex.test(value));
 }
 
 function applyFilter(shouldCloak) {
