@@ -11,8 +11,7 @@ function matchPatterns(value) {
         /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, //ipv4
         /\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/, //us phone
         /(\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}/, //uk phone
-        /(\+91[\-\s]?)??(91)?\d{9}/, //india phone
-        /\+?[1-9]\d{1,14}/ //intl phone
+        /(\+91[\-\s]?)??(91)?\d{9}/ //india phone
     ];
     return regexArray.some(regex => regex.test(value));
 }
