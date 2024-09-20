@@ -41,7 +41,7 @@ function applyFilter(shouldCloak) {
                 element.removeAttribute("maskTitle");
             }
 
-            if (matchPatterns(element.innerText) || matchPatterns(element.value) || matchPatterns(element.textContent)) {
+            if (matchPatterns(element.value)) {
                 element.style.filter = filter;
                 continue;
             }
