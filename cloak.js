@@ -16,8 +16,11 @@ function matchPatterns(value) {
 }
 
 function applyFilter(shouldCloak) {
-    const filter = shouldCloak ? "blur(5px)" : "none";
     const maskText = "*****";
+    const blurFilter = "blur(5px)";
+    const resetBlur = "none";
+    const filter = shouldCloak ? blurFilter : resetBlur;
+
     const elements = document.querySelectorAll("body *");
     for (const element of elements) {
         // Handle title
@@ -27,7 +30,6 @@ function applyFilter(shouldCloak) {
             (shouldCloak && title && matchPatterns(title)) ||
             (!shouldCloak && maskTitle && matchPatterns(maskTitle))
         ) {
-            element.style.filter = filter;
             if (shouldCloak) {
                 element.setAttribute("title", maskText);
                 element.setAttribute("maskTitle", title);
@@ -35,16 +37,27 @@ function applyFilter(shouldCloak) {
                 element.setAttribute("title", maskTitle);
                 element.removeAttribute("maskTitle");
             }
-            continue;
-        }
-        // Handle children
-        for (const child of element.childNodes) {
-            if (
-                (child.nodeType === Node.TEXT_NODE) &&
-                matchPatterns(child.nodeValue)
-            ) {
+
+            if (matchPatterns(element.innerText)) {
                 element.style.filter = filter;
-                break;
+                continue;
+            }
+        }
+
+        // Handle child nodes
+        for (const child of element.childNodes) {
+            if ((child.nodeType === Node.TEXT_NODE)) {
+                if (matchPatterns(child.nodeValue)) {
+                    element.style.filter = filter;
+                    break;
+                }
+
+                // Sometimes, we have text that matches the pattern but is later updated to a different text
+                // For such nodes, we reset the filter
+                if (element.style.filter === blurFilter && !matchPatterns(child.nodeValue)) {
+                    element.style.filter = resetBlur;
+                }
+
             }
         }
     }
