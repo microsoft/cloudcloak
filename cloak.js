@@ -16,6 +16,7 @@ function matchPatterns(value) {
 }
 
 function applyFilter(shouldCloak) {
+    const passwordLikeText = [ "password", "key", "secret" ];
     const maskText = "*****";
     const blurFilter = "blur(5px)";
     const resetBlur = "none";
@@ -61,6 +62,42 @@ function applyFilter(shouldCloak) {
             }
         }
     }
+
+    // Find all input fields with class 'azc-password-input' and apply the filter
+    const passwordInputs = document.querySelectorAll('.azc-password-input');
+    for (const input of passwordInputs) {
+        input.style.filter = filter;
+    }
+
+    // Find all tables and mask the content of cells in columns with the word 'password'
+    const tables = document.querySelectorAll('.fxc-gc-table');
+    tables.forEach((table) => {
+        // Select all row header cells and find the ones that have the word 'password'
+        const headers = table.querySelectorAll('.fxc-gc-columnheader');
+        headers.forEach((header, columnIndex) => {
+            // Check if the header contains the word 'password'
+            if (passwordLikeText.some((pwdLikeText) => header.textContent.toLowerCase().includes(pwdLikeText))) {
+                // Select all row cells in the same column
+                const cells = table.querySelectorAll(`.fxc-gc-cell:nth-child(${columnIndex + 1})`);
+
+                // Mask the content of those cells
+                cells.forEach((cell) => {
+                    cell.style.filter = filter;
+                    const title = cell.getAttribute("title");
+                    const maskTitle = cell.getAttribute("maskTitle") || "";
+                    if (title) {
+                        if (shouldCloak) {
+                            cell.setAttribute("title", maskText);
+                            cell.setAttribute("maskTitle", title);
+                        } else {
+                            cell.setAttribute("title", maskTitle);
+                            cell.removeAttribute("maskTitle");
+                        }
+                    }
+                });
+            }
+        });
+    });
 }
 
 function cloakText() {
