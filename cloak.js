@@ -16,8 +16,12 @@ function matchPatterns(value) {
 }
 
 function applyFilter(shouldCloak) {
-    const filter = shouldCloak ? "blur(5px)" : "none";
+    const passwordLikeText = [ "password", "key", "secret" ];
     const maskText = "*****";
+    const blurFilter = "blur(5px)";
+    const resetBlur = "none";
+    const filter = shouldCloak ? blurFilter : resetBlur;
+
     const elements = document.querySelectorAll("body *");
     for (const element of elements) {
         // Handle title
@@ -27,7 +31,6 @@ function applyFilter(shouldCloak) {
             (shouldCloak && title && matchPatterns(title)) ||
             (!shouldCloak && maskTitle && matchPatterns(maskTitle))
         ) {
-            element.style.filter = filter;
             if (shouldCloak) {
                 element.setAttribute("title", maskText);
                 element.setAttribute("maskTitle", title);
@@ -35,19 +38,66 @@ function applyFilter(shouldCloak) {
                 element.setAttribute("title", maskTitle);
                 element.removeAttribute("maskTitle");
             }
-            continue;
-        }
-        // Handle children
-        for (const child of element.childNodes) {
-            if (
-                (child.nodeType === Node.TEXT_NODE) &&
-                matchPatterns(child.nodeValue)
-            ) {
+
+            if (matchPatterns(element.innerText)) {
                 element.style.filter = filter;
-                break;
+                continue;
+            }
+        }
+
+        // Handle child nodes
+        for (const child of element.childNodes) {
+            if ((child.nodeType === Node.TEXT_NODE)) {
+                if (matchPatterns(child.nodeValue)) {
+                    element.style.filter = filter;
+                    break;
+                }
+
+                // Sometimes, we have text that matches the pattern but is later updated to a different text
+                // For such nodes, we reset the filter
+                if (element.style.filter === blurFilter && !matchPatterns(child.nodeValue)) {
+                    element.style.filter = resetBlur;
+                }
+
             }
         }
     }
+
+    // Find all input fields with class 'azc-password-input' and apply the filter
+    const passwordInputs = document.querySelectorAll('.azc-password-input');
+    for (const input of passwordInputs) {
+        input.style.filter = filter;
+    }
+
+    // Find all tables and mask the content of cells in columns with the word 'password'
+    const tables = document.querySelectorAll('.fxc-gc-table');
+    tables.forEach((table) => {
+        // Select all row header cells and find the ones that have the word 'password'
+        const headers = table.querySelectorAll('.fxc-gc-columnheader');
+        headers.forEach((header, columnIndex) => {
+            // Check if the header contains the word 'password'
+            if (passwordLikeText.some((pwdLikeText) => header.textContent.toLowerCase().includes(pwdLikeText))) {
+                // Select all row cells in the same column
+                const cells = table.querySelectorAll(`.fxc-gc-cell:nth-child(${columnIndex + 1})`);
+
+                // Mask the content of those cells
+                cells.forEach((cell) => {
+                    cell.style.filter = filter;
+                    const title = cell.getAttribute("title");
+                    const maskTitle = cell.getAttribute("maskTitle") || "";
+                    if (title) {
+                        if (shouldCloak) {
+                            cell.setAttribute("title", maskText);
+                            cell.setAttribute("maskTitle", title);
+                        } else {
+                            cell.setAttribute("title", maskTitle);
+                            cell.removeAttribute("maskTitle");
+                        }
+                    }
+                });
+            }
+        });
+    });
 }
 
 function cloakText() {

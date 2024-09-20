@@ -4,9 +4,11 @@ This is a browser extension for folks who might be streaming or presenting while
 
 You can consider this the next-version/update to [Azure Mask](https://github.com/clarkio/azure-mask/) (shout out to Brian Clark for his pioneering work and blessing for us to create this one)
 
+![Emoji person peeking through the clouds](images/icon-128.png)
+
 ## Installing the Extension
 
-1. [Download and unzip the latest version of the extension](https://github.com/microsoft/azurecloak/archive/refs/heads/main.zip) (or clone this repository)
+1. [Download and unzip the latest version of the extension](https://github.com/microsoft/cloudcloak/archive/refs/heads/main.zip) (or clone this repository)
 2. Open the Edge or Chrome browser
 3. Navigate to the browser's `Extensions` page
    - Click `...`, then `Extensions`, then `Manage extensions`
@@ -23,7 +25,7 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 
 ## Reporting Issues
 
-1. [Open the project's `Issues` page](https://github.com/microsoft/azurecloak/issues)
+1. [Open the project's `Issues` page](https://github.com/microsoft/cloudcloak/issues)
 2. Look for an existing issue that describes your scenario
 3. OR create a new issue
    - Please provide detailed steps to reproduce the issue
