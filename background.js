@@ -18,76 +18,78 @@ const extensions = [
 ];
 
 const currentState = { enabled: false };
-
-async function loadScriptAndStartCloaking(tabId, frameIds, allFrames) {
+const previouslyEnabledTabs = new Set();
+async function loadScriptAndStartCloaking(tabId, frameIds, allFrames, shouldCloak) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames, frameIds },
     files: ['cloak.js']
   });
-  await chrome.scripting.executeScript({
-    target: { tabId, allFrames, frameIds },
-    function: () => { cloakTextAndStartObserving(); },
-  });
+
+  if (shouldCloak) {
+    previouslyEnabledTabs.add(tabId);
+    await chrome.scripting.executeScript({
+      target: { tabId, allFrames, frameIds },
+      function: () => { cloakTextAndStartObserving(); }
+    });
+  } else {
+    if (previouslyEnabledTabs.has(tabId)) {
+      previouslyEnabledTabs.delete(tabId);
+      await chrome.scripting.executeScript({
+        target: { tabId, allFrames, frameIds },
+        function: () => { unCloakTextAndStopObserving(); }
+      });
+    }
+  }
 }
 
-function updateBadgeAndExecute(tabId) {
+async function updateBadgeAndExecute(tabId) {
+  // If enabled is true, blur the text. Otherwise, unblur it
+  await loadScriptAndStartCloaking(tabId, null, true, currentState.enabled);
+
   // Set the badge text, color and tooltip
-  chrome.action.setBadgeText({
+  await chrome.action.setBadgeText({
     tabId: tabId,
     text: currentState.enabled ? "ON" : "OFF"
   });
 
-  chrome.action.setBadgeBackgroundColor({
+  await chrome.action.setBadgeBackgroundColor({
     tabId: tabId,
     color: currentState.enabled ? "#00FF00" : "#FF0000"
   });
 
-  chrome.action.setTitle({
+  await chrome.action.setTitle({
     tabId: tabId,
     title: "Cloud Cloak (Available on this page)"
   });
-
-  // If enabled is true, blur the text. Otherwise, unblur it
-  if (currentState.enabled) {
-    // Blur the text
-    loadScriptAndStartCloaking(tabId, null, true);
-  } else {
-    chrome.scripting.executeScript({
-      target: { tabId: tabId, allFrames: true },
-      function: () => { unCloakTextAndStopObserving(); },
-    });
-  }
 }
 
-function eventHandler(tabUrl, tabId) {
-  if (!tabUrl || !extensions.some((url) => tabUrl.startsWith(url))) {
-    chrome.action.setBadgeText({
+async function eventHandler(tabUrl, tabId) {
+  if (tabUrl && extensions.some((url) => tabUrl.startsWith(url))) {
+    await updateBadgeAndExecute(tabId);
+  } else {
+    await chrome.action.setBadgeText({
       tabId: tabId,
       text: ""
     });
 
-    chrome.action.setTitle({
+    await chrome.action.setTitle({
       tabId: tabId,
       title: "Cloud Cloak (Unsupported on this page)"
     });
-  } else {
-    updateBadgeAndExecute(tabId);
   }
 }
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => { eventHandler(tab.url, tabId); });
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => { await eventHandler(tab.url, tabId); });
 
 chrome.tabs.onActivated.addListener(() => {
-  chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
-    eventHandler(tabs[0].url, tabs[0].id);
+  chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
+    await eventHandler(tabs[0].url, tabs[0].id);
   });
 });
 
 chrome.webNavigation.onCompleted.addListener(async (details) => {
-  const currentState = await chrome.action.getBadgeText({ tabId: details.tabId });
-
-  if (currentState === 'ON' && details.frameId !== 0) { // This is an iframe
-    loadScriptAndStartCloaking(details.tabId, [details.frameId], false);
+  if (currentState.enabled && details.frameId !== 0) { // This is an iframe
+    await loadScriptAndStartCloaking(details.tabId, [details.frameId], false);
   }
 }, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
 
@@ -95,6 +97,6 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 chrome.action.onClicked.addListener(async (tab) => {
   if (extensions.some((url) => tab.url.startsWith(url))) {
     currentState.enabled = !currentState.enabled;
-    updateBadgeAndExecute(tab.id);
+    await updateBadgeAndExecute(tab.id);
   }
 });
