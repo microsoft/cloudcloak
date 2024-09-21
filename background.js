@@ -18,33 +18,17 @@ const extensions = [
 ];
 
 const currentState = { enabled: false };
-const previouslyEnabledTabs = new Set();
-async function loadScriptAndStartCloaking(tabId, frameIds, allFrames, shouldCloak) {
+
+async function injectScripts(tabId, frameIds, allFrames) {
   await chrome.scripting.executeScript({
     target: { tabId, allFrames, frameIds },
     files: ['cloak.js']
   });
-
-  if (shouldCloak) {
-    previouslyEnabledTabs.add(tabId);
-    await chrome.scripting.executeScript({
-      target: { tabId, allFrames, frameIds },
-      function: () => { cloakTextAndStartObserving(); }
-    });
-  } else {
-    if (previouslyEnabledTabs.has(tabId)) {
-      previouslyEnabledTabs.delete(tabId);
-      await chrome.scripting.executeScript({
-        target: { tabId, allFrames, frameIds },
-        function: () => { unCloakTextAndStopObserving(); }
-      });
-    }
-  }
 }
 
-async function updateBadgeAndExecute(tabId) {
+async function injectScriptsAndUpdateBadge(tabId) {
   // If enabled is true, blur the text. Otherwise, unblur it
-  await loadScriptAndStartCloaking(tabId, null, true, currentState.enabled);
+  await injectScripts(tabId, null, true, currentState.enabled);
 
   // Set the badge text, color and tooltip
   await chrome.action.setBadgeText({
@@ -63,9 +47,9 @@ async function updateBadgeAndExecute(tabId) {
   });
 }
 
-async function eventHandler(tabUrl, tabId) {
+async function tabsEventHandler(tabUrl, tabId) {
   if (tabUrl && extensions.some((url) => tabUrl.startsWith(url))) {
-    await updateBadgeAndExecute(tabId);
+    await injectScriptsAndUpdateBadge(tabId);
   } else {
     await chrome.action.setBadgeText({
       tabId: tabId,
@@ -79,35 +63,35 @@ async function eventHandler(tabUrl, tabId) {
   }
 }
 
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => { await eventHandler(tab.url, tabId); });
+chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => { await tabsEventHandler(tab.url, tabId); });
 
 chrome.tabs.onActivated.addListener(() => {
   chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
-    await eventHandler(tabs[0].url, tabs[0].id);
+    await tabsEventHandler(tabs[0].url, tabs[0].id);
   });
 });
 
 chrome.webNavigation.onCompleted.addListener(async (details) => {
   if (currentState.enabled && details.frameId !== 0) { // This is an iframe
-    await loadScriptAndStartCloaking(details.tabId, [details.frameId], false);
+    await injectScripts(details.tabId, [details.frameId], false);
   }
 }, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
 
-// When the user clicks on the extension action
+// When the user clicks on the extension action, update the state and inject the scripts
 chrome.action.onClicked.addListener(async (tab) => {
   if (extensions.some((url) => tab.url.startsWith(url))) {
     currentState.enabled = !currentState.enabled;
+    await injectScriptsAndUpdateBadge(tab.id);
     await chrome.storage.sync.set(currentState);
-    await updateBadgeAndExecute(tab.id);
   }
 });
 
 chrome.runtime.onInstalled.addListener(async () => {
-  var stateFromStorage = await chrome.storage.sync.get(); 
+  var stateFromStorage = await chrome.storage.sync.get();
   Object.assign(currentState, stateFromStorage);
 
   chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
-    await eventHandler(tabs[0].url, tabs[0].id);
+    await tabsEventHandler(tabs[0].url, tabs[0].id);
   });
 });
 

@@ -5,20 +5,21 @@ if (!window.cloakObserver) {
         // Debounce the function to avoid multiple calls in quick succession
         clearTimeout(window.mutationObserverTimeoutId);
         window.mutationObserverTimeoutId = setTimeout(() => {
-            cloakText();
+            applyFilter(true);
         }, 50);
     });
 }
 
 function matchPatterns(value) {
     const regexArray = [
-       /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/, //guid
+        /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/, //guid
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, //email
-        /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/, //domain
+        /(?!.*[\\/])(?:[a-zA-Z0-9-]+\.)+(com|org|net|edu|gov|mil|int|co|io|biz|info|me|us|uk|ca|de|jp|fr|au|in|cn|ru|br|za|nl|se|no|es|it|ch|pl|eu|tv|cc|ws|mobi|asia|name|pro|aero|coop|museum)/, //domain
         /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, //ipv4
         /\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/, //us phone
         /(\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}/, //uk phone
-        /(\+91[\-\s]?)??(91)?\d{9}/ //india phone
+        /(\+91[\-\s]?)??(91)?\d{9}/, //india phone
+        /https?:\/\/[^\s]*/ //web addresses
     ];
     return regexArray.some(regex => regex.test(value));
 }
@@ -132,26 +133,24 @@ function applyFilter(shouldCloak) {
     });
 }
 
-function cloakText() {
-    applyFilter(true);
+function toggleCloakAndObserve(shouldCloak) {
+    if (shouldCloak) {
+        applyFilter(true);
+
+        window.cloakObserver && window.cloakObserver.disconnect();
+        window.cloakObserver && window.cloakObserver.observe(document.body, {
+            childList: true, // Watch for added/removed elements
+            subtree: true   // Watch the entire subtree of the document
+        });
+    } else {
+        window.cloakObserver && window.cloakObserver.disconnect();
+        window.cloakObserver = null;
+        applyFilter(false);
+    }
 }
 
-function cloakTextAndStartObserving() {
-    cloakText();
+// Listen for changes to the extension state that is persisted in storage
+chrome.storage.onChanged.addListener((changes) => { toggleCloakAndObserve(changes.enabled.newValue); });
 
-    // Start observing the whole document for changes
-    window.cloakObserver && window.cloakObserver.disconnect();
-    window.cloakObserver && window.cloakObserver.observe(document.body, {
-        childList: true, // Watch for added/removed elements
-        subtree: true   // Watch the entire subtree of the document
-    });
-}
-
-function unCloakTextAndStopObserving() {
-    window.cloakObserver && window.cloakObserver.disconnect();
-    window.cloakObserver = null;
-    applyFilter(false);
-}
-
-window.unCloakTextAndStopObserving = unCloakTextAndStopObserving;
-window.cloakTextAndStartObserving = cloakTextAndStartObserving;
+// Check the current state of the extension and cloak the text accordingly
+chrome.storage.sync.get().then((currentState) => { toggleCloakAndObserve(currentState.enabled); });
