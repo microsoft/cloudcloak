@@ -7,11 +7,12 @@ function matchPatterns(value) {
     const regexArray = [
         /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/, //guid
         /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, //email
-        /(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}/, //domain
+        /(?!.*[\\/])(?:[a-zA-Z0-9-]+\.)+(com|org|net|edu|gov|mil|int|co|io|biz|info|me|us|uk|ca|de|jp|fr|au|in|cn|ru|br|za|nl|se|no|es|it|ch|pl|eu|tv|cc|ws|mobi|asia|name|pro|aero|coop|museum)/, //domain
         /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/, //ipv4
         /\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/, //us phone
         /(\+44\s?7\d{3}|\(?07\d{3}\)?)\s?\d{3}\s?\d{3}/, //uk phone
-        /(\+91[\-\s]?)??(91)?\d{9}/ //india phone
+        /(\+91[\-\s]?)??(91)?\d{9}/, //india phone
+        /https?:\/\/[^\s]*/ //web addresses
     ];
     return regexArray.some(regex => regex.test(value));
 }
