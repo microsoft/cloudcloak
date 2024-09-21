@@ -97,6 +97,17 @@ chrome.webNavigation.onCompleted.addListener(async (details) => {
 chrome.action.onClicked.addListener(async (tab) => {
   if (extensions.some((url) => tab.url.startsWith(url))) {
     currentState.enabled = !currentState.enabled;
+    await chrome.storage.sync.set(currentState);
     await updateBadgeAndExecute(tab.id);
   }
 });
+
+chrome.runtime.onInstalled.addListener(async () => {
+  var stateFromStorage = await chrome.storage.sync.get(); 
+  Object.assign(currentState, stateFromStorage);
+
+  chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
+    await eventHandler(tabs[0].url, tabs[0].id);
+  });
+});
+

@@ -140,6 +140,7 @@ function cloakTextAndStartObserving() {
     cloakText();
 
     // Start observing the whole document for changes
+    window.cloakObserver && window.cloakObserver.disconnect();
     window.cloakObserver && window.cloakObserver.observe(document.body, {
         childList: true, // Watch for added/removed elements
         subtree: true   // Watch the entire subtree of the document
