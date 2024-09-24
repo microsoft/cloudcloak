@@ -14,7 +14,8 @@ const extensions = [
   'https://msazure.visualstudio.com',
   'https://github.com',
   'https://copilotstudio.microsoft.com',
-  'https://copilotstudio.preview.microsoft.com'
+  'https://copilotstudio.preview.microsoft.com',
+  'https://portal.azure.us'
 ];
 
 const currentState = { enabled: false };
