@@ -15,7 +15,8 @@ const extensions = [
   'https://github.com',
   'https://copilotstudio.microsoft.com',
   'https://copilotstudio.preview.microsoft.com',
-  'https://portal.azure.us'
+  'https://portal.azure.us',
+  'https://aad.portal.azure.com'
 ];
 
 const currentState = { enabled: false };
