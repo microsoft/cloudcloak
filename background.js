@@ -5,6 +5,7 @@ const extensions = [
   'https://preview.portal.azure.com',
   'https://entra.microsoft.com',
   'https://intune.microsoft.com',
+  'https://intuneeducation.portal.azure.com',
   'https://ai.azure.com',
   'https://admin.microsoft.com',
   'https://sip.security.microsoft.com',
