@@ -5,6 +5,9 @@ const extensions = [
   'https://preview.portal.azure.com',
   'https://entra.microsoft.com',
   'https://intune.microsoft.com',
+  'https://intuneeducation.portal.azure.com',
+  'https://devicemanagement.portal.azure.com',
+  'https://rc-devicemanagement.portal.azure.com',
   'https://ai.azure.com',
   'https://admin.microsoft.com',
   'https://sip.security.microsoft.com',
@@ -15,7 +18,8 @@ const extensions = [
   'https://github.com',
   'https://copilotstudio.microsoft.com',
   'https://copilotstudio.preview.microsoft.com',
-  'https://portal.azure.us'
+  'https://portal.azure.us',
+  'https://aad.portal.azure.com'
 ];
 
 const currentState = { enabled: false };
