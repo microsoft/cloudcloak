@@ -3,12 +3,9 @@ import { supportedDomains, cloakablePatterns } from "./common.js";
 document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         var url = tabs[0]?.url;
-        const tabId = tabs[0]?.id;
-
+        
         // Check if the current domain is supported
         if (url && !supportedDomains.includes((new URL(url)).origin)) {
-            console.log(url);
-            console.log((new URL(url)).origin);
             // Display a message if the domain is not supported
             document.body.innerHTML = '<p>This extension is not supported on this domain.</p>';
         } else {
@@ -16,6 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 state[toggle.id] = false;
                 return state;
             }, {});
+            const currentDomain = (new URL(url)).hostname;
+            // Inject the currentDomain into the div with class subtitle
+            const subtitleDiv = document.querySelector('.subtitle');
+            if (subtitleDiv) {
+                subtitleDiv.textContent = `${currentDomain}`;
+            }
 
             const createToggle = (toggle) => {
                 const container = document.createElement('div');

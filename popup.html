@@ -8,18 +8,20 @@
             padding: 10px;
             width: 200px;
         }
-
-        .title {
+        
+        .title-container {
             text-align: center;
             background-color: lightgray;
             padding: 5px;
-            font-size: 18px;
             margin-bottom: 10px;
             margin-top: -18px;
             width: calc(100% + 40px);
             /* Extend the width to cover padding */
             margin-left: -25px;
             /* Adjust for left padding */
+        }
+        .title {
+            font-size: 18px;
         }
 
         .switch-container {
@@ -79,7 +81,10 @@
 </head>
 
 <body>
-    <div class="title">Cloud Cloak</div>
+    <div class="title-container">
+        <div class="title">Cloud Cloak</div>
+        <div class="subtitle"></div>
+    </div>
     <script src="popup.js" type="module"></script>
 </body>
 
