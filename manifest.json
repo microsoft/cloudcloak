@@ -10,9 +10,11 @@
     "128": "images/icon-128.png"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "images/icon-16.png",
       "32": "images/icon-32.png",
@@ -20,6 +22,10 @@
       "128": "images/icon-128.png"
     }
   },
+  "web_accessible_resources": [{
+     "matches": ["<all_urls>"],
+     "resources": ["common.js"]
+   }],
   "permissions": [
     "activeTab",
     "scripting",
