@@ -1,98 +1,65 @@
-const extensions = [
-  'https://portal.azure.com',
-  'https://ms.portal.azure.com',
-  'https://rc.portal.azure.com',
-  'https://preview.portal.azure.com',
-  'https://entra.microsoft.com',
-  'https://intune.microsoft.com',
-  'https://ai.azure.com',
-  'https://admin.microsoft.com',
-  'https://sip.security.microsoft.com',
-  'https://purview.microsoft.com',
-  'https://make.powerapps.com',
-  'https://make.preview.powerapps.com',
-  'https://msazure.visualstudio.com',
-  'https://github.com',
-  'https://copilotstudio.microsoft.com',
-  'https://copilotstudio.preview.microsoft.com',
-  'https://portal.azure.us'
-];
+import { supportedDomains, cloakablePatterns } from "./common.js";
 
-const currentState = { enabled: false };
+// Get the current state of the extension from storage and update the badge
+function getCurrentStateFromStorageAndUpdateBadge() {
+  // Check the current state of the extension and cloak the text accordingly
+  chrome.storage.sync.get().then(async (currentState) => {
+    chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
+      if (tabs[0] && tabs[0].url) {
+        const tabId = tabs[0].id;
+        const enabled = Object.values(currentState).some((value) => !!value);
+        // Set the badge text, color and tooltip
+        await chrome.action.setBadgeText({
+          tabId: tabId,
+          text: enabled ? "ON" : "OFF"
+        });
 
+        await chrome.action.setBadgeBackgroundColor({
+          tabId: tabId,
+          color: enabled ? "#00FF00" : "#FF0000"
+        });
+      }
+    });
+  });
+}
+
+// Inject the cloak script into the current tab/iframes
 async function injectScripts(tabId, frameIds, allFrames) {
+  allFrames = false;
   await chrome.scripting.executeScript({
     target: { tabId, allFrames, frameIds },
     files: ['cloak.js']
   });
 }
 
-async function injectScriptsAndUpdateBadge(tabId) {
-  // If enabled is true, blur the text. Otherwise, unblur it
-  await injectScripts(tabId, null, true, currentState.enabled);
-
-  // Set the badge text, color and tooltip
-  await chrome.action.setBadgeText({
-    tabId: tabId,
-    text: currentState.enabled ? "ON" : "OFF"
-  });
-
-  await chrome.action.setBadgeBackgroundColor({
-    tabId: tabId,
-    color: currentState.enabled ? "#00FF00" : "#FF0000"
-  });
-
-  await chrome.action.setTitle({
-    tabId: tabId,
-    title: "Cloud Cloak (Available on this page)"
-  });
-}
-
-async function tabsEventHandler(tabUrl, tabId) {
-  if (tabUrl && extensions.some((url) => tabUrl.startsWith(url))) {
-    await injectScriptsAndUpdateBadge(tabId);
-  } else {
-    await chrome.action.setBadgeText({
-      tabId: tabId,
-      text: ""
-    });
-
-    await chrome.action.setTitle({
-      tabId: tabId,
-      title: "Cloud Cloak (Unsupported on this page)"
-    });
-  }
-}
-
-chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => { await tabsEventHandler(tab.url, tabId); });
-
-chrome.tabs.onActivated.addListener(() => {
-  chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
-    await tabsEventHandler(tabs[0].url, tabs[0].id);
-  });
-});
-
+// This event is triggered when navigation occurs, which can include loading iframes
 chrome.webNavigation.onCompleted.addListener(async (details) => {
-  if (currentState.enabled && details.frameId !== 0) { // This is an iframe
+  if (details.frameId !== 0) { // This is an iframe
     await injectScripts(details.tabId, [details.frameId], false);
   }
-}, { url: [{ urlMatches: 'https://*/*' }] });  // Matches all https URLs
+}, { url: [{ urlMatches: 'https://*/*' }] });
 
-// When the user clicks on the extension action, update the state and inject the scripts
-chrome.action.onClicked.addListener(async (tab) => {
-  if (extensions.some((url) => tab.url.startsWith(url))) {
-    currentState.enabled = !currentState.enabled;
-    await injectScriptsAndUpdateBadge(tab.id);
-    await chrome.storage.sync.set(currentState);
-  }
-});
-
-chrome.runtime.onInstalled.addListener(async () => {
-  var stateFromStorage = await chrome.storage.sync.get();
-  Object.assign(currentState, stateFromStorage);
-
+// Function to handle tab events
+async function tabsEventHandler() {
   chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
-    await tabsEventHandler(tabs[0].url, tabs[0].id);
+      const tabUrl = tabs[0]?.url;
+      const tabId = tabs[0]?.id;
+      if (tabUrl && supportedDomains.some((url) => tabUrl.startsWith(url))) {
+        await injectScripts(tabId, null, true);
+        getCurrentStateFromStorageAndUpdateBadge();
+      }
+    
   });
-});
+}
 
+// Listen for tab updates
+chrome.tabs.onUpdated.addListener(async () => { await tabsEventHandler(); });
+
+// Listen for tab switching
+chrome.tabs.onActivated.addListener(async () => { await tabsEventHandler(); });
+
+// Listen for extension installation
+chrome.runtime.onInstalled.addListener(async () => { await tabsEventHandler(); });
+
+// Listen for changes to the extension state that is persisted in storage
+chrome.storage.onChanged.addListener(async () => { getCurrentStateFromStorageAndUpdateBadge(); });
