@@ -23,7 +23,7 @@ export const supportedDomains = [
     { 
         id: 'secrets', 
         label: 'Secrets',
-        regexes: [       
+        regexes: [
         ]
     },
     { 

@@ -1,123 +1,107 @@
-(async () => {
-    const src = chrome.runtime.getURL("./common.js");
-    import(src).then((commonModule) => {
-        cloakablePatterns = commonModule.cloakablePatterns;
+if (window.cloakScriptInjected !== true) {
+    window.cloakScriptInjected = true;
 
-        window.regexArray;
-        window.toggleStates;
-
-
-        // MutationObserver to watch for changes in the DOM
-        window.mutationObserverTimeoutId;
-        if (!window.cloakObserver) {
-            window.cloakObserver = new MutationObserver(() => {
-                // Debounce the function to avoid multiple calls in quick succession
-                clearTimeout(window.mutationObserverTimeoutId);
-                window.mutationObserverTimeoutId = setTimeout(() => {
-                    applyFilter(true);
-                }, 50);
-            });
-        }
-
-
-        function updateRegexes() {
-            window.regexArray = [];
-            if (cloakablePatterns) {
-                Object.keys(window.toggleStates).forEach((key) => {
-                    const currentStateOfToggle = window.toggleStates[key];
-                    if (currentStateOfToggle) {
-                        const cloakablePattern = cloakablePatterns.find((pattern) => pattern.id === key);
-                        if (cloakablePattern) {
-                            window.regexArray.push(...cloakablePattern.regexes);
-                        }
-                    }
-                });
-            }
-        }
-
-        function matchPatterns(value) {
-            return window.regexArray && window.regexArray.some(regex => regex.test(value));
-        }
-
-        function applyFilter(shouldCloak) {
-            const passwordLikeText = ["password", "key", "secret"];
-            const maskText = "*****";
+    (async () => {
+        const src = chrome.runtime.getURL("./common.js");
+        import(src).then((commonModule) => {
+            const cloakablePatterns = commonModule.cloakablePatterns;
             const blurFilter = "blur(5px)";
             const resetBlur = "none";
-            const titleAttribute = "title";
-            const maskTitleAttribute = "maskTitle";
-            const dataOriginalTypeAttribute = "data-original-type";
-            const filter = shouldCloak ? blurFilter : resetBlur;
 
-            if (!shouldCloak || (shouldCloak && !!window.regexArray.length)) {
-                const elements = document.querySelectorAll("body *");
-                for (const element of elements) {
-                    // Handle title
-                    const title = element.hasAttribute(titleAttribute) ? element.getAttribute(titleAttribute) : "";
-                    const maskTitle = element.hasAttribute(maskTitleAttribute) ? element.getAttribute(maskTitleAttribute) : "";
-                    if (
-                        (shouldCloak && title && matchPatterns(title)) ||
-                        (!shouldCloak && maskTitle && matchPatterns(maskTitle))
-                    ) {
-                        if (shouldCloak) {
-                            element.setAttribute(titleAttribute, maskText);
-                            element.setAttribute(maskTitleAttribute, title);
-                        } else {
-                            element.setAttribute(titleAttribute, maskTitle);
-                            element.removeAttribute(maskTitleAttribute);
-                        }
+            window.regexPatternsArray;
+            window.toggleStates;
 
-                        if (matchPatterns(element.value)) {
-                            element.style.filter = filter;
-                            continue;
-                        }
+            function tryApplyFilterOnElementTitle(element, shouldCloak) {
+                const titleAttribute = "title";
+                const maskTitleAttribute = "maskTitle";
+                const maskText = "*****";
+
+
+                const title = element.hasAttribute(titleAttribute) ? element.getAttribute(titleAttribute) : "";
+                const maskTitle = element.hasAttribute(maskTitleAttribute) ? element.getAttribute(maskTitleAttribute) : "";
+                if (
+                    (shouldCloak && title && matchPatterns(title)) ||
+                    (!shouldCloak && maskTitle && matchPatterns(maskTitle))
+                ) {
+                    if (shouldCloak) {
+                        element.setAttribute(titleAttribute, maskText);
+                        element.setAttribute(maskTitleAttribute, title);
+                    } else {
+                        element.setAttribute(titleAttribute, maskTitle);
+                        element.removeAttribute(maskTitleAttribute);
                     }
+                }
+            }
 
+            function tryMatchAndApplyFilterOnTextNode(node, applyFilter) {
+                const filter = applyFilter ? blurFilter : resetBlur;
+                if (matchPatterns(node.nodeValue || node.textContent || node.wholeText || node.data || node.value)) {
+                    const targetNode = node.style ? node : node.parentElement;
+                    targetNode.style.filter = filter;
+                    tryApplyFilterOnElementTitle(targetNode, applyFilter);
+                    return true;
+                } else {
+                    const targetNode = node.style ? node : node.parentElement;
+                    if (targetNode?.style?.filter === blurFilter) {
+                        // Sometimes, we have text that matches the pattern but is later updated to a different text
+                        // For such nodes, we reset the filter and the title
+                        targetNode.style.filter = resetBlur;
+                        tryApplyFilterOnElementTitle(targetNode, false);
+                        return true;
+                    }
+                }
+            }
+
+            function applyFilterOnNode(node, applyFilter) {
+                // Ignore script and style tags
+                if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE" || node.nodeName === "svg" || node.nodeType == Node.COMMENT_NODE) {
+                    return;
+                }
+
+                if (node.nodeType === Node.TEXT_NODE || node.nodeName === "INPUT") {
+                    tryMatchAndApplyFilterOnTextNode(node, applyFilter);
+                } else if (node.nodeType === Node.ELEMENT_NODE) {
                     // Handle child nodes
-                    for (const child of element.childNodes) {
-                        if ((child.nodeType === Node.TEXT_NODE)) {
-                            if (matchPatterns(child.nodeValue)) {
-                                element.style.filter = filter;
-                                break;
-                            }
+                    for (const child of node.childNodes) {
+                        if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
+                            break;
+                        }
 
-                            // Sometimes, we have text that matches the pattern but is later updated to a different text
-                            // For such nodes, we reset the filter
-                            if (element.style.filter === blurFilter && !matchPatterns(child.nodeValue)) {
-                                element.style.filter = resetBlur;
-                            }
+                        // Recurse into child nodes
+                        if (child.childNodes && child.childNodes.length > 0) {
+                            applyFilterOnNode(child, applyFilter);
                         }
                     }
                 }
             }
 
-            
-                // Find all input fields with class 'azc-password-input' and apply the filter so they appear blurred
-                const passwordInputs = document.querySelectorAll('.azc-password-input');
+            function updateRegexPatterns() {
+                window.regexPatternsArray = [];
+                if (cloakablePatterns) {
+                    Object.keys(window.toggleStates).forEach((key) => {
+                        const currentStateOfToggle = window.toggleStates[key];
+                        if (currentStateOfToggle) {
+                            const cloakablePattern = cloakablePatterns.find((pattern) => pattern.id === key);
+                            if (cloakablePattern) {
+                                window.regexPatternsArray.push(...cloakablePattern.regexes);
+                            }
+                        }
+                    });
+                }
+            }
+
+            function matchPatterns(value) {
+                return window.regexPatternsArray && window.regexPatternsArray.some(regex => regex.test(value));
+            }
+
+            function specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter) {
+                const passwordLikeText = ["password", "key", "secret"];
+                const filter = applyFilter ? blurFilter : resetBlur;
+
+                // Find all input password fields and apply the filter so they appear blurred
+                const passwordInputs = document.querySelectorAll('input[type="password"]');
                 for (const input of passwordInputs) {
                     input.style.filter = filter;
-                }
-
-                // Check for all input fields and set them as password fields so that anything typed in shows up as hidden
-                // This is done after the password inputs are blurred so that these do not show up blurred
-                if (shouldCloak && window.toggleStates?.["secrets"]) {
-                    const inputs = document.querySelectorAll('input[type="text"]');
-                    for (const input of inputs) {
-                        const originalType = input.hasAttribute(dataOriginalTypeAttribute) ? input.getAttribute(dataOriginalTypeAttribute) : "";
-                        if (!originalType) {
-                            input.setAttribute(dataOriginalTypeAttribute, "text");
-                        }
-                        input.type = 'password';
-                    }
-                } else {
-                    const inputs = document.querySelectorAll('input[type="password"]');
-                    for (const input of inputs) {
-                        const originalType = input.hasAttribute(dataOriginalTypeAttribute) ? input.getAttribute(dataOriginalTypeAttribute) : "";
-                        if (originalType) {
-                            input.type = originalType;
-                            input.removeAttribute(dataOriginalTypeAttribute);
-                        }
-                    }
                 }
 
                 // Find all tables and mask the content of cells in columns with keywords like 'password', 'key', 'secret'
@@ -137,7 +121,7 @@
                                 const title = cell.getAttribute("title");
                                 const maskTitle = cell.getAttribute("maskTitle") || "";
                                 if (title) {
-                                    if (shouldCloak && window.toggleStates?.["secrets"]) {
+                                    if (shouldCloak) {
                                         cell.setAttribute("title", maskText);
                                         cell.setAttribute("maskTitle", title);
                                     } else {
@@ -149,44 +133,72 @@
                         }
                     });
                 });
-            
-        }
+            }
+            function getAllNodesAndApplyFilter(applyFilter) {
+                const elements = document.querySelectorAll("body *"); //"body *:not([style*='filter: blur(\"5px\")'])"); //document.querySelectorAll("body *");
+                for (const element of elements) {
+                    applyFilterOnNode(element, applyFilter);
+                }
 
-        function toggleCloakAndObserve() {
-            updateRegexes();
-            if (window.regexArray?.length > 0 || !!window.toggleStates?.["secrets"]) {
-                applyFilter(true);
+                specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter);
+            }
+            function toggleCloak() {
+                // Update the regex patterns
+                updateRegexPatterns();
 
-                window.cloakObserver && window.cloakObserver.disconnect();
-                window.cloakObserver && window.cloakObserver.observe(document.body, {
-                    childList: true, // Watch for added/removed elements
-                    subtree: true   // Watch the entire subtree of the document
+                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets) {
+                    getAllNodesAndApplyFilter(true);
+                    window.cloakObserver && window.cloakObserver.disconnect();
+                    window.cloakObserver && window.cloakObserver.observe(document.body, {
+                        childList: true, // Watch for added/removed elements
+                        subtree: true   // Watch the entire subtree of the document
+                    });
+                } else {
+                    getAllNodesAndApplyFilter(false);
+                    window.cloakObserver && window.cloakObserver.disconnect();
+                    window.cloakObserver = null;
+                }
+
+            }
+
+            // MutationObserver to watch for changes in the DOM
+            if (!window.cloakObserver) {
+                window.cloakObserver = new MutationObserver((mutationList) => {
+                    // Go through the mutations and apply the filter on the added nodes
+                    for (const mutation of mutationList) {
+                        mutation.addedNodes.forEach((node) => {
+                            applyFilterOnNode(node, true /* If observer is running we are in cloak mode */);
+                        });
+                    }
+
+                    // Special handling for password fields and tables with secrets
+                    window.secretHandlingTimeout && clearTimeout(window.secretHandlingTimeout);
+                    window.secretHandlingTimeout = setTimeout(() => {
+                        specialHandlingForPasswordFieldsAndTablesWithSecrets(true /* If observer is running we are in cloak mode */);
+                    }, 50);
                 });
-            } else {
-                window.cloakObserver && window.cloakObserver.disconnect();
-                window.cloakObserver = null;
-                applyFilter(false);
             }
-        }
 
-        // Listen for changes to the extension state that is persisted in storage
-        chrome.storage.onChanged.addListener((changes) => {
-            for (const key in changes) {
-                if (changes.hasOwnProperty(key) && window.toggleStates.hasOwnProperty(key)) {
-                    window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
+            // Listen for changes to the toggle states that is persisted in storage
+            chrome.storage.onChanged.addListener((changes) => {
+                for (const key in changes) {
+                    if (changes.hasOwnProperty(key) && window.toggleStates.hasOwnProperty(key)) {
+                        window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
+                    }
                 }
-            }
-            toggleCloakAndObserve();
-        });
+                toggleCloak();
+            });
 
-        chrome.storage.sync.get().then((currentState) => {
-            window.toggleStates = {};
-            for (const key in currentState) {
-                if (currentState.hasOwnProperty(key)) {
-                    window.toggleStates[key] = currentState[key];
+            chrome.storage.sync.get().then((currentState) => {
+                // Get the current state of toggles from storage
+                window.toggleStates = {};
+                for (const key in currentState) {
+                    if (currentState.hasOwnProperty(key)) {
+                        window.toggleStates[key] = currentState[key];
+                    }
                 }
-            }
-            toggleCloakAndObserve();
+                toggleCloak();
+            });
         });
-    });
-})();
+    })();
+}

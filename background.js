@@ -33,7 +33,7 @@ async function injectScripts(tabId, frameIds, allFrames) {
 }
 
 // This event is triggered when navigation occurs, which can include loading iframes
-chrome.webNavigation.onCompleted.addListener(async (details) => {
+chrome.webNavigation.onCommitted.addListener(async (details) => {
   if (details.frameId !== 0) { // This is an iframe
     await injectScripts(details.tabId, [details.frameId], false);
   }
