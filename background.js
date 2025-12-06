@@ -1,3 +1,8 @@
+const extensions = [
+'http://intune.microsoft,com'
+];
+
+
 import { supportedDomains, cloakablePatterns } from "./common.js";
 
 // Get the current state of the extension from storage and update the badge
