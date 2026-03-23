@@ -1,0 +1,80 @@
+name: Release Extension
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Validate extension files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            manifest.json
+            background.js
+            cloak.js
+            common.js
+            popup.html
+            popup.js
+            LICENSE
+            images/icon-16.png
+            images/icon-32.png
+            images/icon-48.png
+            images/icon-128.png
+          )
+
+          for file in "${required_files[@]}"; do
+            test -f "$file"
+          done
+
+          python -m json.tool manifest.json >/dev/null
+
+          for file in background.js cloak.js common.js popup.js; do
+            node --check "$file"
+          done
+
+      - name: Build extension package
+        run: |
+          mkdir -p dist
+          git archive \
+            --format=zip \
+            --output=dist/cloudcloak.zip \
+            HEAD \
+            manifest.json \
+            background.js \
+            cloak.js \
+            common.js \
+            popup.html \
+            popup.js \
+            LICENSE \
+            images
+
+      - name: Read extension version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "value=$(node -p \"JSON.parse(require('fs').readFileSync('manifest.json', 'utf8')).version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          gh release create "main-${GITHUB_RUN_NUMBER}" dist/cloudcloak.zip \
+            --target "$GITHUB_SHA" \
+            --title "Cloud Cloak ${VERSION}" \
+            --notes "Automated release from main for commit ${GITHUB_SHA}." \
+            --latest

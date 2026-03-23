@@ -8,7 +8,7 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 
 ## Installing the Extension
 
-1. [Download and unzip the latest version of the extension](https://github.com/microsoft/cloudcloak/archive/refs/heads/main.zip) (or clone this repository)
+1. [Download and unzip the latest version of the extension](../../releases/latest/download/cloudcloak.zip) (or clone this repository)
 2. Open the Edge or Chrome browser
 3. Navigate to the browser's `Extensions` page
    - Click `...`, then `Extensions`, then `Manage extensions`
@@ -16,6 +16,8 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 5. Select `Load unpacked` and navigate to the directory containing the extension code
 6. Pin the extension icon to the toolbar
    - Click the extension "puzzle piece" in the browser toolbar, then `...` for the extension, then `Show in toolbar`
+
+Every pull request now validates the extension package, and every push to `main` publishes a downloadable zip in the repository's Releases.
 
 ## Using the Extension
 
