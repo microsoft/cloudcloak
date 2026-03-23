@@ -1,0 +1,67 @@
+name: PR Validation
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Validate extension files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          required_files=(
+            manifest.json
+            background.js
+            cloak.js
+            common.js
+            popup.html
+            popup.js
+            LICENSE
+            images/icon-16.png
+            images/icon-32.png
+            images/icon-48.png
+            images/icon-128.png
+          )
+
+          for file in "${required_files[@]}"; do
+            test -f "$file"
+          done
+
+          python -m json.tool manifest.json >/dev/null
+
+          for file in background.js cloak.js common.js popup.js; do
+            node --check "$file"
+          done
+
+      - name: Build extension package
+        run: |
+          mkdir -p dist
+          git archive \
+            --format=zip \
+            --output=dist/cloudcloak.zip \
+            HEAD \
+            manifest.json \
+            background.js \
+            cloak.js \
+            common.js \
+            popup.html \
+            popup.js \
+            LICENSE \
+            images
+
+      - name: Upload extension package
+        uses: actions/upload-artifact@v7.0.0
+        with:
+          name: cloudcloak-package
+          path: dist/cloudcloak.zip
+          if-no-files-found: error
