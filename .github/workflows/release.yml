@@ -32,21 +32,34 @@ jobs:
           print(manifest['version'])
           PY
           )" >> "$GITHUB_OUTPUT"
+          echo "tag=v$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('manifest.json').read_text(encoding='utf-8'))
+          print(manifest['version'])
+          PY
+          )" >> "$GITHUB_OUTPUT"
 
       - name: Package extension zip
         run: |
           mkdir -p dist
-          zip -r dist/cloudcloak.zip . \
-            -x ".git/*" \
-               ".github/*" \
-               "dist/*"
+          zip -r dist/cloudcloak.zip \
+            manifest.json \
+            background.js \
+            cloak.js \
+            common.js \
+            popup.html \
+            popup.js \
+            images/
 
-      - name: Publish latest release
+      - name: Publish versioned release
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
           VERSION: ${{ steps.version.outputs.value }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
           python3 - <<'PY'
           import json
@@ -60,6 +73,7 @@ jobs:
           repo = os.environ['GITHUB_REPOSITORY']
           sha = os.environ['GITHUB_SHA']
           version = os.environ['VERSION']
+          tag = os.environ['TAG']
           asset_path = Path('dist/cloudcloak.zip')
           asset_name = asset_path.name
 
@@ -85,33 +99,10 @@ jobs:
               f"Extension version: `{version}`."
           )
           releases_url = f'https://api.github.com/repos/{repo}/releases'
+          release = None
 
           try:
-              release = request_json(f'{releases_url}/tags/latest')
-              for asset in release.get('assets', []):
-                  if asset.get('name') != asset_name:
-                      continue
-
-                  delete_request = urllib.request.Request(
-                      asset['url'],
-                      headers=headers,
-                      method='DELETE',
-                  )
-                  with urllib.request.urlopen(delete_request):
-                      pass
-
-              release = request_json(
-                  f"{releases_url}/{release['id']}",
-                  method='PATCH',
-                  payload={
-                      'tag_name': 'latest',
-                      'target_commitish': sha,
-                      'name': 'Latest build',
-                      'body': release_body,
-                      'draft': False,
-                      'prerelease': False,
-                  },
-              )
+              release = request_json(f'{releases_url}/tags/{tag}')
           except urllib.error.HTTPError as error:
               if error.code != 404:
                   raise
@@ -120,14 +111,18 @@ jobs:
                   releases_url,
                   method='POST',
                   payload={
-                      'tag_name': 'latest',
+                      'tag_name': tag,
                       'target_commitish': sha,
-                      'name': 'Latest build',
+                      'name': tag,
                       'body': release_body,
                       'draft': False,
                       'prerelease': False,
                   },
               )
+
+          if any(asset.get('name') == asset_name for asset in release.get('assets', [])):
+              print(f'Asset {asset_name} already exists on {tag}; leaving existing release unchanged.')
+              raise SystemExit(0)
 
           upload_url = release['upload_url'].split('{', 1)[0]
           upload_query = urllib.parse.urlencode({'name': asset_name})
