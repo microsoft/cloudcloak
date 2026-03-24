@@ -1,0 +1,51 @@
+name: Pull Request CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Validate extension source files
+        run: |
+          node --check background.js
+          node --check cloak.js
+          node --check common.js
+          node --check popup.js
+          node -e "JSON.parse(require('node:fs').readFileSync('manifest.json', 'utf8'))"
+
+      - name: Run tests
+        run: node --test tests/ipaddresses.test.mjs
+
+      - name: Build extension package
+        run: |
+          mkdir -p dist
+          zip -r dist/cloudcloak-extension.zip \
+            manifest.json \
+            background.js \
+            cloak.js \
+            common.js \
+            popup.html \
+            popup.js \
+            images \
+            LICENSE \
+            README.md
+
+      - name: Upload extension package
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudcloak-extension-pr-${{ github.event.pull_request.number }}
+          path: dist/cloudcloak-extension.zip
