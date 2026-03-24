@@ -32,8 +32,10 @@ export function isSupportedUrl(url) {
         }
 
         const supportedUrl = new URL(supportedDomain.replace('*.', 'placeholder.'));
+        const supportedHostname = supportedUrl.hostname.replace('placeholder.', '');
         return currentUrl.protocol === supportedUrl.protocol &&
-            currentUrl.hostname.endsWith(`.${supportedUrl.hostname.replace('placeholder.', '')}`);
+            currentUrl.hostname.endsWith(`.${supportedHostname}`) &&
+            currentUrl.hostname.split('.').length === supportedHostname.split('.').length + 1;
     });
 }
 
