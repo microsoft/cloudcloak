@@ -15,9 +15,15 @@ export const supportedDomains = [
     'https://github.com',
     'https://copilotstudio.microsoft.com',
     'https://copilotstudio.preview.microsoft.com',
+    'https://reactblade-ms*.portal.azure.net',
+    'https://reactblade*.portal.azure.net',
     'https://*.reactblade-ms.portal.azure.net',
     'https://*.reactblade.portal.azure.net'
 ];
+
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 export function isSupportedUrl(url) {
     if (!url) {
@@ -31,11 +37,14 @@ export function isSupportedUrl(url) {
             return currentUrl.origin === supportedDomain;
         }
 
-        const supportedUrl = new URL(supportedDomain.replace('*.', 'placeholder.'));
-        const supportedHostname = supportedUrl.hostname.replace('placeholder.', '');
+        const supportedUrl = new URL(supportedDomain.replaceAll('*', 'wildcard'));
+        const supportedHostnamePattern = supportedUrl.hostname
+            .split('wildcard')
+            .map(escapeRegex)
+            .join('[^.]*');
+
         return currentUrl.protocol === supportedUrl.protocol &&
-            currentUrl.hostname.endsWith(`.${supportedHostname}`) &&
-            currentUrl.hostname.split('.').length === supportedHostname.split('.').length + 1;
+            new RegExp(`^${supportedHostnamePattern}$`).test(currentUrl.hostname);
     });
 }
 
