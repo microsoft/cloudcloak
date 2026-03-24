@@ -197,6 +197,20 @@ if (window.cloakScriptInjected !== true) {
                 }
             }
 
+            function getDefaultToggleStates() {
+                return (cloakablePatterns || []).reduce((states, pattern) => {
+                    states[pattern.id] = false;
+                    return states;
+                }, {});
+            }
+
+            function ensureToggleStates(toggleStates = {}) {
+                window.toggleStates = {
+                    ...getDefaultToggleStates(),
+                    ...toggleStates
+                };
+            }
+
             function matchPatterns(value) {
                 return window.regexPatternsArray && window.regexPatternsArray.some(regex => regex.test(value));
             }
@@ -269,6 +283,8 @@ if (window.cloakScriptInjected !== true) {
 
             }
 
+            ensureToggleStates();
+
             // MutationObserver to watch for changes in the DOM
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
@@ -294,8 +310,9 @@ if (window.cloakScriptInjected !== true) {
 
             // Listen for changes to the toggle states that is persisted in storage
             chrome.storage.onChanged.addListener((changes) => {
+                ensureToggleStates(window.toggleStates);
                 for (const key in changes) {
-                    if (changes.hasOwnProperty(key) && window.toggleStates.hasOwnProperty(key)) {
+                    if (Object.prototype.hasOwnProperty.call(changes, key) && Object.prototype.hasOwnProperty.call(window.toggleStates, key)) {
                         window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
                     }
                 }
@@ -307,12 +324,7 @@ if (window.cloakScriptInjected !== true) {
 
             chrome.storage.sync.get().then((currentState) => {
                 // Get the current state of toggles from storage
-                window.toggleStates = {};
-                for (const key in currentState) {
-                    if (currentState.hasOwnProperty(key)) {
-                        window.toggleStates[key] = currentState[key];
-                    }
-                }
+                ensureToggleStates(currentState);
                 toggleCloak();
             });
         });
