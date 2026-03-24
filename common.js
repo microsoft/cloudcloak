@@ -20,7 +20,7 @@ export const supportedDomains = [
 ];
 
 const ipAddressRegexes = [
-    /(?<![0-9A-Za-z])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z]|\.\d)/, // IPv4
+    /(?<![0-9A-Za-z.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z]|\.\d)/, // IPv4
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:]|\.\d)/, // IPv6 expanded
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){1,7}:(?![0-9A-Za-z:]|\.\d)/, // IPv6 shorthand trailing ::
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:]|\.\d)/, // IPv6 shorthand single omitted group
