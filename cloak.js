@@ -299,7 +299,10 @@ if (window.cloakScriptInjected !== true) {
                         window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
                     }
                 }
-                toggleCloak();
+                // Debounce the re-crawl so rapid toggling (e.g. "Toggle All") doesn't
+                // trigger multiple expensive full-DOM walks back-to-back
+                clearTimeout(window.cloakToggleDebounce);
+                window.cloakToggleDebounce = setTimeout(toggleCloak, 100);
             });
 
             chrome.storage.sync.get().then((currentState) => {
