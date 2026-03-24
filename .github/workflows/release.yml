@@ -1,0 +1,146 @@
+name: Release extension
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Read extension version
+        id: version
+        run: |
+          echo "value=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('manifest.json').read_text(encoding='utf-8'))
+          print(manifest['version'])
+          PY
+          )" >> "$GITHUB_OUTPUT"
+
+      - name: Package extension zip
+        run: |
+          mkdir -p dist
+          zip -r dist/cloudcloak.zip . \
+            -x ".git/*" \
+               ".github/*" \
+               "dist/*"
+
+      - name: Publish latest release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          token = os.environ['GITHUB_TOKEN']
+          repo = os.environ['GITHUB_REPOSITORY']
+          sha = os.environ['GITHUB_SHA']
+          version = os.environ['VERSION']
+          asset_path = Path('dist/cloudcloak.zip')
+          asset_name = asset_path.name
+
+          headers = {
+              'Authorization': f'Bearer {token}',
+              'Accept': 'application/vnd.github+json',
+              'X-GitHub-Api-Version': '2022-11-28',
+          }
+
+          def request_json(url, method='GET', payload=None):
+              data = None
+              request_headers = dict(headers)
+              if payload is not None:
+                  data = json.dumps(payload).encode('utf-8')
+                  request_headers['Content-Type'] = 'application/json'
+
+              request = urllib.request.Request(url, data=data, headers=request_headers, method=method)
+              with urllib.request.urlopen(request) as response:
+                  return json.loads(response.read().decode('utf-8'))
+
+          release_body = (
+              f"Automated release for commit {sha[:7]} from `main`.\n\n"
+              f"Extension version: `{version}`."
+          )
+          releases_url = f'https://api.github.com/repos/{repo}/releases'
+
+          try:
+              release = request_json(f'{releases_url}/tags/latest')
+              for asset in release.get('assets', []):
+                  if asset.get('name') != asset_name:
+                      continue
+
+                  delete_request = urllib.request.Request(
+                      asset['url'],
+                      headers=headers,
+                      method='DELETE',
+                  )
+                  with urllib.request.urlopen(delete_request):
+                      pass
+
+              release = request_json(
+                  f"{releases_url}/{release['id']}",
+                  method='PATCH',
+                  payload={
+                      'tag_name': 'latest',
+                      'target_commitish': sha,
+                      'name': 'Latest build',
+                      'body': release_body,
+                      'draft': False,
+                      'prerelease': False,
+                  },
+              )
+          except urllib.error.HTTPError as error:
+              if error.code != 404:
+                  raise
+
+              release = request_json(
+                  releases_url,
+                  method='POST',
+                  payload={
+                      'tag_name': 'latest',
+                      'target_commitish': sha,
+                      'name': 'Latest build',
+                      'body': release_body,
+                      'draft': False,
+                      'prerelease': False,
+                  },
+              )
+
+          upload_url = release['upload_url'].split('{', 1)[0]
+          upload_query = urllib.parse.urlencode({'name': asset_name})
+          upload_request = urllib.request.Request(
+              f'{upload_url}?{upload_query}',
+              data=asset_path.read_bytes(),
+              headers={
+                  **headers,
+                  'Content-Type': 'application/zip',
+              },
+              method='POST',
+          )
+
+          with urllib.request.urlopen(upload_request) as response:
+              response.read()
+          PY

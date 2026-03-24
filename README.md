@@ -8,7 +8,7 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 
 ## Installing the Extension
 
-1. [Download and unzip the latest version of the extension](https://github.com/microsoft/cloudcloak/archive/refs/heads/main.zip) (or clone this repository)
+1. [Download and unzip the latest version of the extension](https://github.com/microsoft/cloudcloak/releases/latest/download/cloudcloak.zip) (or clone this repository)
 2. Open the Edge or Chrome browser
 3. Navigate to the browser's `Extensions` page
    - Click `...`, then `Extensions`, then `Manage extensions`
