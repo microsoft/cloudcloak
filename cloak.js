@@ -257,8 +257,9 @@ if (window.cloakScriptInjected !== true) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
                     window.cloakObserver && window.cloakObserver.observe(document.body, {
-                        childList: true, // Watch for added/removed elements
-                        subtree: true   // Watch the entire subtree of the document
+                        childList: true,    // Watch for added/removed elements
+                        subtree: true,      // Watch the entire subtree of the document
+                        characterData: true // Watch for text content changes (SPA updates)
                     });
                 } else {
                     getAllNodesAndApplyFilter(false);
@@ -271,8 +272,12 @@ if (window.cloakScriptInjected !== true) {
             // MutationObserver to watch for changes in the DOM
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
-                    // Go through the mutations and apply the filter on the added nodes
+                    // Go through the mutations and apply the filter on the added/changed nodes
                     for (const mutation of mutationList) {
+                        if (mutation.type === 'characterData') {
+                            // Text content changed in-place (common in SPAs like Azure Portal)
+                            applyFilterOnNode(mutation.target, true);
+                        }
                         mutation.addedNodes.forEach((node) => {
                             applyFilterOnNode(node, true /* If observer is running we are in cloak mode */);
                         });
