@@ -24,22 +24,16 @@ jobs:
       - name: Read extension version
         id: version
         run: |
-          echo "value=$(python3 - <<'PY'
+          version=$(python3 - <<'PY'
           import json
           from pathlib import Path
 
           manifest = json.loads(Path('manifest.json').read_text(encoding='utf-8'))
           print(manifest['version'])
           PY
-          )" >> "$GITHUB_OUTPUT"
-          echo "tag=v$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          manifest = json.loads(Path('manifest.json').read_text(encoding='utf-8'))
-          print(manifest['version'])
-          PY
-          )" >> "$GITHUB_OUTPUT"
+          )
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
 
       - name: Package extension zip
         run: |
