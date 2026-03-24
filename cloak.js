@@ -283,7 +283,7 @@ if (window.cloakScriptInjected !== true) {
 
             }
 
-            ensureToggleStates();
+            window.toggleStates = getDefaultToggleStates();
 
             // MutationObserver to watch for changes in the DOM
             if (!window.cloakObserver) {
@@ -310,7 +310,6 @@ if (window.cloakScriptInjected !== true) {
 
             // Listen for changes to the toggle states that is persisted in storage
             chrome.storage.onChanged.addListener((changes) => {
-                ensureToggleStates(window.toggleStates);
                 for (const key in changes) {
                     if (Object.prototype.hasOwnProperty.call(changes, key) && Object.prototype.hasOwnProperty.call(window.toggleStates, key)) {
                         window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
