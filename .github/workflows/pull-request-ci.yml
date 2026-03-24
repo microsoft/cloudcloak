@@ -25,7 +25,7 @@ jobs:
           node --check cloak.js
           node --check common.js
           node --check popup.js
-          node -e "JSON.parse(require('node:fs').readFileSync('manifest.json', 'utf8'))"
+          node --input-type=module -e "JSON.parse(await (await import('node:fs/promises')).readFile('manifest.json', 'utf8'))"
 
       - name: Run tests
         run: node --test tests/ipaddresses.test.mjs
