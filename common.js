@@ -17,44 +17,46 @@ export const supportedDomains = [
     'https://copilotstudio.preview.microsoft.com',
     'https://*.reactblade-ms.portal.azure.net',
     'https://*.reactblade.portal.azure.net'
-  ];
+];
 
-  export const cloakablePatterns = [
-    { 
-        id: 'secrets', 
+export const cloakablePatterns = [
+    {
+        id: 'secrets',
         label: 'Secrets',
         regexes: [
             /(^|[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890+/-_=])(?<refine>[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890]{42}AzSe[A-D][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890]{5})([^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890+/-_=]|$)/ // Azure search
         ]
     },
-    { 
-        id: 'guids', 
+    {
+        id: 'guids',
         label: 'GUIDs',
         regexes: [
             /\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b/
         ]
     },
-    { 
-        id: 'domains', 
+    {
+        id: 'domains',
         label: 'Domains',
         regexes: [
             /(?!.*[\\/])(?:[a-zA-Z0-9-]+\.)+(com|org|net|edu|gov|mil|int|co|io|biz|info|me|us|uk|ca|de|jp|fr|au|in|cn|ru|br|za|nl|se|no|es|it|ch|pl|eu|tv|cc|ws|mobi|asia|name|pro|aero|coop|museum)/
         ]
     },
-    { 
-        id: 'ipaddresses', 
+    {
+        id: 'ipaddresses',
         label: 'IP Addresses',
         regexes: [
             /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/ //ipv4
         ]
     },
-    {   id: 'email',
+    {
+        id: 'email',
         label: 'Emails',
         regexes: [
             /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
         ]
     },
-    {   id: 'phone',
+    {
+        id: 'phone',
         label: 'Phone Numbers',
         regexes: [
             /\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})/, //us phone
@@ -62,13 +64,15 @@ export const supportedDomains = [
             /(\+91[\-\s]?)??(91)?\d{9}/, //india phone
         ]
     },
-    {   id: 'urls', 
+    {
+        id: 'urls',
         label: 'URLs',
         regexes: [
             /https?:\/\/[^\s]*/
         ]
     },
-    {   id: 'azuredomains',
+    {   
+        id: 'azuredomains',
         label: 'Azure Domains',
         regexes: [
             /[a-zA-Z0-9-]+\.azurewebsites\.net/,
@@ -90,5 +94,11 @@ export const supportedDomains = [
             /[a-zA-Z0-9-]+\.azurecontainer\.io/,
             /[a-zA-Z0-9-]+\.azurestaticapps\.net/
         ]
+    },
+    {
+        id: 'subscriptioninfo',
+        label: 'Subscription Info',
+        category: 'Subscription Info',
+        regexes: []
     }
 ];

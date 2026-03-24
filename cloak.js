@@ -33,15 +33,118 @@ if (window.cloakScriptInjected !== true) {
                 }
             }
 
+            function getCloakTargetNode(node) {
+                if (!node) {
+                    return null;
+                }
+
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    return node;
+                }
+
+                if (node.parentElement) {
+                    return node.parentElement;
+                }
+
+                const parentNode = node.parentNode;
+                if (parentNode && parentNode.host && parentNode.host.nodeType === Node.ELEMENT_NODE) {
+                    return parentNode.host;
+                }
+
+                return null;
+            }
+
+            function specialHandlingForAzurePortalEssentialsValues(applyFilter) {
+                const filter = applyFilter ? blurFilter : resetBlur;
+                const essentialsLabels = document.querySelectorAll("body [class*='essentialsLabel']");
+
+                const getLabelText = (element) => {
+                    if (!element) {
+                        return "";
+                    }
+
+                    const clonedElement = element.cloneNode(true);
+                    clonedElement.querySelectorAll("button, [role='button']").forEach((button) => button.remove());
+
+                    return (clonedElement.textContent || "")
+                        .replace(/\s+/g, " ")
+                        .trim();
+                };
+
+                const applyFilterToValueElement = (valueElement) => {
+                    if (!valueElement) {
+                        return;
+                    }
+
+                    const linkTarget = valueElement.matches("a, [role='link']") ? valueElement : valueElement.querySelector("a, [role='link']");
+                    const target = linkTarget || valueElement;
+                    target.style.filter = filter;
+                    tryApplyFilterOnElementTitle(target, applyFilter);
+                };
+
+                const findEssentialsValueElement = (essentialsItem, labelElement) => {
+                    if (!essentialsItem) {
+                        return null;
+                    }
+
+                    const isEssentialsLabelText = (text) => {
+                        const normalizedText = (text || "").trim().replace(/\s+/g, " ").toLowerCase();
+                        return normalizedText.startsWith("subscription") || normalizedText.startsWith("app service plan");
+                    };
+
+                    const childElements = Array.from(essentialsItem.children).filter((child) => child !== labelElement);
+
+                    const valueCandidate = childElements.find((child) => child.matches("[class*='essentialsValue']"));
+                    if (valueCandidate) {
+                        return valueCandidate;
+                    }
+
+                    const linkCandidate = childElements.find((child) => child.querySelector("a, [role='link']"));
+                    if (linkCandidate) {
+                        return linkCandidate;
+                    }
+
+                    const textCandidate = childElements.find((child) => {
+                        const candidateText = child.textContent?.trim().replace(/\s+/g, " ") || "";
+                        return candidateText && candidateText !== ":" && !isEssentialsLabelText(candidateText);
+                    });
+                    if (textCandidate) {
+                        return textCandidate;
+                    }
+
+                    return essentialsItem.nextElementSibling;
+                };
+
+                essentialsLabels.forEach((element) => {
+                    const labelText = getLabelText(element).toLowerCase();
+                    const isSubscriptionLabel = labelText.startsWith("subscription");
+                    const isAppServicePlanLabel = labelText.startsWith("app service plan");
+                    if (!isSubscriptionLabel && !isAppServicePlanLabel) {
+                        return;
+                    }
+
+                    const essentialsItem = element.closest("[class*='essentialsItem']") || element.parentElement;
+                    if (!essentialsItem) {
+                        return;
+                    }
+
+                    const valueElement = findEssentialsValueElement(essentialsItem, element);
+                    applyFilterToValueElement(valueElement);
+                });
+            }
+
             function tryMatchAndApplyFilterOnTextNode(node, applyFilter) {
                 const filter = applyFilter ? blurFilter : resetBlur;
                 if (matchPatterns(node.nodeValue || node.textContent || node.wholeText || node.data || node.value)) {
-                    const targetNode = node.style ? node : node.parentElement;
+                    const targetNode = getCloakTargetNode(node);
+                    if (!targetNode) {
+                        return false;
+                    }
                     targetNode.style.filter = filter;
                     tryApplyFilterOnElementTitle(targetNode, applyFilter);
                     return true;
                 } else {
-                    const targetNode = node.style ? node : node.parentElement;
+                    const targetNode = getCloakTargetNode(node);
                     if (targetNode?.style?.filter === blurFilter) {
                         // Sometimes, we have text that matches the pattern but is later updated to a different text
                         // For such nodes, we reset the filter and the title
@@ -71,6 +174,10 @@ if (window.cloakScriptInjected !== true) {
                         if (child.childNodes && child.childNodes.length > 0) {
                             applyFilterOnNode(child, applyFilter);
                         }
+                    }
+
+                    if (node.shadowRoot && node.shadowRoot.childNodes.length > 0) {
+                        applyFilterOnNode(node.shadowRoot, applyFilter);
                     }
                 }
             }
@@ -121,7 +228,7 @@ if (window.cloakScriptInjected !== true) {
                                 const title = cell.getAttribute("title");
                                 const maskTitle = cell.getAttribute("maskTitle") || "";
                                 if (title) {
-                                    if (shouldCloak) {
+                                    if (applyFilter) {
                                         cell.setAttribute("title", maskText);
                                         cell.setAttribute("maskTitle", title);
                                     } else {
@@ -135,23 +242,24 @@ if (window.cloakScriptInjected !== true) {
                 });
             }
             function getAllNodesAndApplyFilter(applyFilter) {
-                const elements = document.querySelectorAll("body *"); //"body *:not([style*='filter: blur(\"5px\")'])"); //document.querySelectorAll("body *");
-                for (const element of elements) {
-                    applyFilterOnNode(element, applyFilter);
+                if (document.body) {
+                    applyFilterOnNode(document.body, applyFilter);
                 }
 
                 specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter);
+                specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && applyFilter);
             }
             function toggleCloak() {
                 // Update the regex patterns
                 updateRegexPatterns();
 
-                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets) {
+                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
                     window.cloakObserver && window.cloakObserver.observe(document.body, {
-                        childList: true, // Watch for added/removed elements
-                        subtree: true   // Watch the entire subtree of the document
+                        childList: true,    // Watch for added/removed elements
+                        subtree: true,      // Watch the entire subtree of the document
+                        characterData: true // Watch for text content changes (SPA updates)
                     });
                 } else {
                     getAllNodesAndApplyFilter(false);
@@ -164,8 +272,12 @@ if (window.cloakScriptInjected !== true) {
             // MutationObserver to watch for changes in the DOM
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
-                    // Go through the mutations and apply the filter on the added nodes
+                    // Go through the mutations and apply the filter on the added/changed nodes
                     for (const mutation of mutationList) {
+                        if (mutation.type === 'characterData') {
+                            // Text content changed in-place (common in SPAs like Azure Portal)
+                            applyFilterOnNode(mutation.target, true);
+                        }
                         mutation.addedNodes.forEach((node) => {
                             applyFilterOnNode(node, true /* If observer is running we are in cloak mode */);
                         });
@@ -175,6 +287,7 @@ if (window.cloakScriptInjected !== true) {
                     window.secretHandlingTimeout && clearTimeout(window.secretHandlingTimeout);
                     window.secretHandlingTimeout = setTimeout(() => {
                         specialHandlingForPasswordFieldsAndTablesWithSecrets(true /* If observer is running we are in cloak mode */);
+                        specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && true /* If observer is running we are in cloak mode */);
                     }, 50);
                 });
             }
@@ -186,7 +299,10 @@ if (window.cloakScriptInjected !== true) {
                         window.toggleStates[key] = changes[key].newValue !== undefined ? changes[key].newValue : window.toggleStates[key];
                     }
                 }
-                toggleCloak();
+                // Debounce the re-crawl so rapid toggling (e.g. "Toggle All") doesn't
+                // trigger multiple expensive full-DOM walks back-to-back
+                clearTimeout(window.cloakToggleDebounce);
+                window.cloakToggleDebounce = setTimeout(toggleCloak, 100);
             });
 
             chrome.storage.sync.get().then((currentState) => {
