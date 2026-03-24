@@ -19,6 +19,21 @@ export const supportedDomains = [
     'https://*.reactblade.portal.azure.net'
 ];
 
+const ipAddressRegexes = [
+    /(?<![0-9A-Za-z:.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z:.])/, //ipv4
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:.])/, //ipv6 expanded
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,7}:(?![0-9A-Za-z:.])/, //ipv6 shorthand trailing ::
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:.])/, //ipv6 shorthand single omitted group
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}(?![0-9A-Za-z:.])/, //ipv6 shorthand double omitted group
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}(?![0-9A-Za-z:.])/, //ipv6 shorthand triple omitted group
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}(?![0-9A-Za-z:.])/, //ipv6 shorthand four omitted groups
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}(?![0-9A-Za-z:.])/, //ipv6 shorthand five omitted groups
+    /(?<![0-9A-Za-z:.])[0-9A-Fa-f]{1,4}:(?:(?::[0-9A-Fa-f]{1,4}){1,6})(?![0-9A-Za-z:.])/, //ipv6 shorthand six omitted groups
+    /(?<![0-9A-Za-z:.]):(?:(?::[0-9A-Fa-f]{1,4}){1,7}|:)(?![0-9A-Za-z:.])/, //ipv6 shorthand leading ::
+    /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){6}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z:.])/, //ipv6 dotted quad expanded
+    /(?<![0-9A-Za-z:.])(?:(?:[0-9A-Fa-f]{1,4}:){1,5}:|::(?:[0-9A-Fa-f]{1,4}:){0,4})(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z:.])/ //ipv6 dotted quad shorthand
+];
+
 export const cloakablePatterns = [
     {
         id: 'secrets',
@@ -44,12 +59,7 @@ export const cloakablePatterns = [
     {
         id: 'ipaddresses',
         label: 'IP Addresses',
-        regexes: [
-            /(?<![0-9A-Za-z:.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z:.])/, //ipv4
-            /(?<![0-9A-Za-z:.])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:.])/i, //ipv6 expanded
-            /(?<![0-9A-Za-z:.])(?:(?:[0-9A-Fa-f]{1,4}:){1,7}:|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}|[0-9A-Fa-f]{1,4}:(?:(?::[0-9A-Fa-f]{1,4}){1,6})|:(?:(?::[0-9A-Fa-f]{1,4}){1,7}|:))(?![0-9A-Za-z:.])/i, //ipv6 shorthand
-            /(?<![0-9A-Za-z:.])(?:(?:[0-9A-Fa-f]{1,4}:){6}|::(?:[0-9A-Fa-f]{1,4}:){0,4}|(?:[0-9A-Fa-f]{1,4}:){1,5}:)(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z:.])/i //ipv6 dotted quad
-        ]
+        regexes: ipAddressRegexes
     },
     {
         id: 'email',
