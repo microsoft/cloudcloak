@@ -1,11 +1,11 @@
-import { supportedDomains, cloakablePatterns } from "./common.js";
+import { cloakablePatterns, isSupportedUrl } from "./common.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         var url = tabs[0]?.url;
 
         // Check if the current domain is supported
-        if (url && !supportedDomains.includes((new URL(url)).origin)) {
+        if (!isSupportedUrl(url)) {
             // Display a message if the domain is not supported
             document.body.innerHTML = '<p>This extension is not supported on this domain.</p>';
         } else {

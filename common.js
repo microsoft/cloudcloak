@@ -19,6 +19,24 @@ export const supportedDomains = [
     'https://*.reactblade.portal.azure.net'
 ];
 
+export function isSupportedUrl(url) {
+    if (!url) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+
+    return supportedDomains.some((supportedDomain) => {
+        if (!supportedDomain.includes('*')) {
+            return currentUrl.origin === supportedDomain;
+        }
+
+        const supportedUrl = new URL(supportedDomain.replace('*.', 'placeholder.'));
+        return currentUrl.protocol === supportedUrl.protocol &&
+            currentUrl.hostname.endsWith(`.${supportedUrl.hostname.replace('placeholder.', '')}`);
+    });
+}
+
 export const cloakablePatterns = [
     {
         id: 'secrets',
