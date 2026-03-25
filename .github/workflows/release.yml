@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6
 
       - name: Read extension version
         id: version
@@ -50,86 +50,26 @@ jobs:
       - name: Publish versioned release
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_SHA: ${{ github.sha }}
           VERSION: ${{ steps.version.outputs.value }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import urllib.error
-          import urllib.parse
-          import urllib.request
-          from pathlib import Path
+          release_body="Automated release for commit ${GITHUB_SHA::7} from main.
 
-          token = os.environ['GITHUB_TOKEN']
-          repo = os.environ['GITHUB_REPOSITORY']
-          sha = os.environ['GITHUB_SHA']
-          version = os.environ['VERSION']
-          tag = os.environ['TAG']
-          asset_path = Path('dist/cloudcloak.zip')
-          asset_name = asset_path.name
+          Extension version: \`${VERSION}\`."
 
-          headers = {
-              'Authorization': f'Bearer {token}',
-              'Accept': 'application/vnd.github+json',
-              'X-GitHub-Api-Version': '2022-11-28',
-          }
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -Fxq 'cloudcloak.zip'; then
+              echo "Asset cloudcloak.zip already exists on $TAG; leaving existing release unchanged."
+              exit 0
+            fi
 
-          def request_json(url, method='GET', payload=None):
-              data = None
-              request_headers = dict(headers)
-              if payload is not None:
-                  data = json.dumps(payload).encode('utf-8')
-                  request_headers['Content-Type'] = 'application/json'
+            gh release upload "$TAG" dist/cloudcloak.zip
+            exit 0
+          fi
 
-              request = urllib.request.Request(url, data=data, headers=request_headers, method=method)
-              with urllib.request.urlopen(request) as response:
-                  return json.loads(response.read().decode('utf-8'))
-
-          release_body = (
-              f"Automated release for commit {sha[:7]} from `main`.\n\n"
-              f"Extension version: `{version}`."
-          )
-          releases_url = f'https://api.github.com/repos/{repo}/releases'
-          release = None
-
-          try:
-              release = request_json(f'{releases_url}/tags/{tag}')
-          except urllib.error.HTTPError as error:
-              if error.code != 404:
-                  raise
-
-              release = request_json(
-                  releases_url,
-                  method='POST',
-                  payload={
-                      'tag_name': tag,
-                      'target_commitish': sha,
-                      'name': tag,
-                      'body': release_body,
-                      'draft': False,
-                      'prerelease': False,
-                  },
-              )
-
-          if any(asset.get('name') == asset_name for asset in release.get('assets', [])):
-              print(f'Asset {asset_name} already exists on {tag}; leaving existing release unchanged.')
-              raise SystemExit(0)
-
-          upload_url = release['upload_url'].split('{', 1)[0]
-          upload_query = urllib.parse.urlencode({'name': asset_name})
-          upload_request = urllib.request.Request(
-              f'{upload_url}?{upload_query}',
-              data=asset_path.read_bytes(),
-              headers={
-                  **headers,
-                  'Content-Type': 'application/zip',
-              },
-              method='POST',
-          )
-
-          with urllib.request.urlopen(upload_request) as response:
-              response.read()
-          PY
+          gh release create "$TAG" \
+            dist/cloudcloak.zip \
+            --title "$TAG" \
+            --notes "$release_body" \
+            --target "$GITHUB_SHA"
