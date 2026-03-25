@@ -1,0 +1,75 @@
+name: Release extension
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Read extension version
+        id: version
+        run: |
+          version=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path('manifest.json').read_text(encoding='utf-8'))
+          print(manifest['version'])
+          PY
+          )
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Package extension zip
+        run: |
+          mkdir -p dist
+          zip -r dist/cloudcloak.zip \
+            manifest.json \
+            background.js \
+            cloak.js \
+            common.js \
+            popup.html \
+            popup.js \
+            images/
+
+      - name: Publish versioned release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+          VERSION: ${{ steps.version.outputs.value }}
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          release_body="Automated release for commit ${GITHUB_SHA::7} from \`main\`.
+
+          Extension version: \`${VERSION}\`."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -Fxq 'cloudcloak.zip'; then
+              echo "Asset cloudcloak.zip already exists on $TAG; leaving existing release unchanged."
+              exit 0
+            fi
+
+            gh release upload "$TAG" dist/cloudcloak.zip
+            exit 0
+          fi
+
+          gh release create "$TAG" \
+            dist/cloudcloak.zip \
+            --title "$TAG" \
+            --notes "$release_body" \
+            --target "$GITHUB_SHA"
