@@ -1,4 +1,4 @@
-import { supportedDomains, cloakablePatterns } from "./common.js";
+import { isSupportedUrl } from "./common.js";
 
 // Get the current state of the extension from storage and update the badge
 function getCurrentStateFromStorageAndUpdateBadge() {
@@ -44,7 +44,7 @@ async function tabsEventHandler() {
   chrome.tabs.query({ currentWindow: true, active: true }, async (tabs) => {
       const tabUrl = tabs[0]?.url;
       const tabId = tabs[0]?.id;
-      if (tabUrl && supportedDomains.some((url) => tabUrl.startsWith(url))) {
+      if (isSupportedUrl(tabUrl)) {
         await injectScripts(tabId, null, true);
         getCurrentStateFromStorageAndUpdateBadge();
       }

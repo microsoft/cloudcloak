@@ -15,10 +15,52 @@ export const supportedDomains = [
     'https://github.com',
     'https://copilotstudio.microsoft.com',
     'https://copilotstudio.preview.microsoft.com',
+    'https://reactblade-ms.portal.azure.net',
+    'https://reactblade.portal.azure.net',
+    'https://reactblade-ms*.portal.azure.net',
+    'https://reactblade*.portal.azure.net',
     'https://*.reactblade-ms.portal.azure.net',
     'https://*.reactblade.portal.azure.net'
 ];
 
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const supportedDomainMatchers = supportedDomains.map((supportedDomain) => {
+    const supportedUrl = new URL(supportedDomain.replaceAll('*', 'wildcard'));
+    if (!supportedDomain.includes('*')) {
+        return {
+            protocol: supportedUrl.protocol,
+            origin: supportedUrl.origin
+        };
+    }
+
+    return {
+        protocol: supportedUrl.protocol,
+        hostnameRegex: new RegExp(`^${supportedUrl.hostname
+            .split('wildcard')
+            .map(escapeRegex)
+            .join('[^.]+')}$`)
+    };
+});
+
+export function isSupportedUrl(url) {
+    if (!url) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+
+    return supportedDomainMatchers.some((supportedDomainMatcher) => {
+        if (supportedDomainMatcher.origin) {
+            return currentUrl.origin === supportedDomainMatcher.origin;
+        }
+
+        return currentUrl.protocol === supportedDomainMatcher.protocol &&
+            supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
+    });
+}
 const ipAddressRegexes = [
     /(?<![0-9A-Za-z.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z]|\.\d)/, // IPv4
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:]|\.\d)/, // IPv6 expanded
