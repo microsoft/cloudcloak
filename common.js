@@ -69,6 +69,21 @@ export function normalizePageRuleText(value) {
         .toLowerCase();
 }
 
+export function matchesPageRuleLabel(label, contextValue) {
+    const normalizedLabel = normalizePageRuleText(label);
+    const normalizedContextValue = normalizePageRuleText(contextValue);
+    if (!normalizedLabel || !normalizedContextValue) {
+        return false;
+    }
+
+    const labelPattern = normalizedLabel
+        .split(" ")
+        .map(escapeRegex)
+        .join("\\s+");
+
+    return new RegExp(`(^|[^a-z0-9])${labelPattern}($|[^a-z0-9])`, "i").test(normalizedContextValue);
+}
+
 export const pageSpecificRules = [
     {
         id: "azure-storage-access-keys",
@@ -81,6 +96,8 @@ export const pageSpecificRules = [
             "key",
             "key1",
             "key2",
+            "key 1",
+            "key 2",
             "connection string",
             "shared access signature",
             "sas",

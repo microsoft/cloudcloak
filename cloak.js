@@ -5,10 +5,12 @@ if (window.cloakScriptInjected !== true) {
         const src = chrome.runtime.getURL("./common.js");
         import(src).then((commonModule) => {
             const cloakablePatterns = commonModule.cloakablePatterns;
+            const matchesPageRuleLabel = commonModule.matchesPageRuleLabel;
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
             const normalizePageRuleText = commonModule.normalizePageRuleText;
             const blurFilter = "blur(5px)";
+            const maskText = "*****";
             const resetBlur = "none";
 
             window.regexPatternsArray;
@@ -17,7 +19,6 @@ if (window.cloakScriptInjected !== true) {
             function tryApplyFilterOnElementTitle(element, shouldCloak, force = false) {
                 const titleAttribute = "title";
                 const maskTitleAttribute = "maskTitle";
-                const maskText = "*****";
 
 
                 const title = element.hasAttribute(titleAttribute) ? element.getAttribute(titleAttribute) : "";
@@ -28,7 +29,9 @@ if (window.cloakScriptInjected !== true) {
                 ) {
                     if (shouldCloak) {
                         element.setAttribute(titleAttribute, maskText);
-                        element.setAttribute(maskTitleAttribute, title);
+                        if (!maskTitle) {
+                            element.setAttribute(maskTitleAttribute, title);
+                        }
                     } else {
                         element.setAttribute(titleAttribute, maskTitle);
                         element.removeAttribute(maskTitleAttribute);
@@ -124,13 +127,13 @@ if (window.cloakScriptInjected !== true) {
             }
 
             function elementMatchesPageRuleContext(element, rule) {
-                const labels = (rule.contextLabels || []).map((label) => normalizePageRuleText(label));
+                const labels = rule.contextLabels || [];
                 if (labels.length === 0) {
                     return false;
                 }
 
                 const contextValues = collectRuleContextText(element);
-                return labels.some((label) => contextValues.some((contextValue) => contextValue.includes(label)));
+                return labels.some((label) => contextValues.some((contextValue) => matchesPageRuleLabel(label, contextValue)));
             }
 
             function applyPageRuleMaskToElement(element, shouldCloak, ruleId) {
@@ -151,8 +154,15 @@ if (window.cloakScriptInjected !== true) {
                 }
 
                 element.removeAttribute(ruleMaskAttribute);
-                element.style.filter = matchPatterns(getElementMaskValue(element)) ? blurFilter : resetBlur;
-                tryApplyFilterOnElementTitle(element, false, true);
+                const shouldKeepMaskedByPattern = matchPatterns(getElementMaskValue(element));
+                const originalTitle = element.getAttribute("maskTitle") || "";
+
+                element.style.filter = shouldKeepMaskedByPattern ? blurFilter : resetBlur;
+                if (originalTitle && matchPatterns(originalTitle)) {
+                    element.setAttribute("title", maskText);
+                } else {
+                    tryApplyFilterOnElementTitle(element, false, true);
+                }
             }
 
             function updatePageRuleMatches(rule, matchedElements, shouldCloak) {

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
     isPageRuleActive,
+    matchesPageRuleLabel,
     matchesPageRuleUrl,
     normalizePageRuleText,
     pageSpecificRules
@@ -14,6 +15,14 @@ test('normalizes page rule text for label matching', () => {
     assert.equal(normalizePageRuleText('  Shared   Access   Signature  '), 'shared access signature');
     assert.equal(normalizePageRuleText('Key1'), 'key1');
     assert.equal(normalizePageRuleText(''), '');
+});
+
+test('matches page rule labels on word boundaries instead of substrings', () => {
+    assert.equal(matchesPageRuleLabel('key', 'Storage account key'), true);
+    assert.equal(matchesPageRuleLabel('connection string', 'Primary connection string'), true);
+    assert.equal(matchesPageRuleLabel('key', 'Search keywords'), false);
+    assert.equal(matchesPageRuleLabel('key', 'Keyboard shortcut'), false);
+    assert.equal(matchesPageRuleLabel('key 1', 'Key 1'), true);
 });
 
 test('matches Azure Storage access key routes', () => {
