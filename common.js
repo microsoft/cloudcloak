@@ -61,6 +61,57 @@ export function isSupportedUrl(url) {
             supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
     });
 }
+
+export function normalizePageRuleText(value) {
+    return (value || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+export const pageSpecificRules = [
+    {
+        id: "azure-storage-access-keys",
+        toggleId: "secrets",
+        urlRegexes: [
+            /storageaccounts/i,
+            /(access[-\s]?keys|(?:\/|=)keys(?:[/?#]|$)|sharedaccesssignature|shared access signature|\bsas\b)/i
+        ],
+        contextLabels: [
+            "key",
+            "key1",
+            "key2",
+            "connection string",
+            "shared access signature",
+            "sas",
+            "signature",
+            "secret"
+        ],
+        valueSelectors: [
+            "input",
+            "textarea",
+            "[role='textbox']"
+        ],
+        interactionRescanDelays: [0, 75, 250]
+    }
+];
+
+export function matchesPageRuleUrl(rule, url) {
+    if (!rule || !url) {
+        return false;
+    }
+
+    return (rule.urlRegexes || []).every((regex) => regex.test(url));
+}
+
+export function isPageRuleActive(rule, url, toggleStates = {}) {
+    if (!rule || !rule.toggleId || !toggleStates[rule.toggleId]) {
+        return false;
+    }
+
+    return matchesPageRuleUrl(rule, url);
+}
+
 const ipAddressRegexes = [
     /(?<![0-9A-Za-z.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z]|\.\d)/, // IPv4
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:]|\.\d)/, // IPv6 expanded
