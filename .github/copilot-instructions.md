@@ -21,10 +21,12 @@
 - Keep regex and masking logic readable and narrowly scoped to the sensitive data being targeted.
 
 ## Test guidance
-- There is currently no established package manager, build pipeline, or test runner configuration in this repository.
+- The repo includes a minimal `package.json` with `type: module` so Node treats `.js` files as ES modules during validation and tests.
+- Pull requests are validated by `.github/workflows/pull-request-ci.yml`, which runs syntax checks, manifest validation, the Node test suite, and the extension packaging step.
+- Use Node's built-in test runner for automated coverage in `tests/*.test.mjs`.
 - For documentation-only or metadata-only changes, do not add tests.
 - For behavior changes, prefer extracting small pure functions from DOM-heavy code so they can be tested with minimal setup.
-- If test coverage is added, keep it lightweight, avoid adding unnecessary dependencies, and focus on the changed behavior.
+- If test coverage is added, keep it lightweight, dependency-free, and focused on the changed behavior.
 - Prioritize tests for:
   - regex detection and matching behavior
   - supported-domain logic
