@@ -54,7 +54,7 @@ jobs:
           VERSION: ${{ steps.version.outputs.value }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          release_body="Automated release for commit ${GITHUB_SHA::7} from main.
+          release_body="Automated release for commit ${GITHUB_SHA::7} from \`main\`.
 
           Extension version: \`${VERSION}\`."
 
