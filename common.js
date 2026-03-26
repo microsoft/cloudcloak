@@ -107,8 +107,15 @@ export const pageSpecificRules = [
         valueSelectors: [
             "input",
             "textarea",
-            "[role='textbox']"
+            "[role='textbox']",
+            "[class*='value']"
         ],
+        nearbyActionLabels: [
+            "show",
+            "hide",
+            "copy"
+        ],
+        minimumValueLength: 16,
         interactionRescanDelays: [0, 75, 250]
     }
 ];

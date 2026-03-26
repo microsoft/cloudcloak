@@ -136,6 +136,38 @@ if (window.cloakScriptInjected !== true) {
                 return labels.some((label) => contextValues.some((contextValue) => matchesPageRuleLabel(label, contextValue)));
             }
 
+            function elementHasNearbyRuleActions(element, rule) {
+                const actionLabels = rule.nearbyActionLabels || [];
+                if (actionLabels.length === 0) {
+                    return false;
+                }
+
+                const actionTexts = [];
+                const addActionText = (value) => {
+                    const normalizedValue = normalizePageRuleText(value);
+                    if (normalizedValue) {
+                        actionTexts.push(normalizedValue);
+                    }
+                };
+
+                const contextContainer = element.closest("[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']") || element.parentElement;
+                if (!contextContainer) {
+                    return false;
+                }
+
+                contextContainer.querySelectorAll("button, [role='button'], [title], [aria-label]").forEach((candidate) => {
+                    if (candidate === element || candidate.contains(element)) {
+                        return;
+                    }
+
+                    addActionText(candidate.textContent);
+                    addActionText(candidate.getAttribute?.("title"));
+                    addActionText(candidate.getAttribute?.("aria-label"));
+                });
+
+                return actionLabels.some((label) => actionTexts.some((actionText) => matchesPageRuleLabel(label, actionText)));
+            }
+
             function applyPageRuleMaskToElement(element, shouldCloak, ruleId) {
                 if (!element) {
                     return;
@@ -189,11 +221,16 @@ if (window.cloakScriptInjected !== true) {
                 const matchedElements = [];
                 if (candidateSelectors) {
                     document.querySelectorAll(candidateSelectors).forEach((element) => {
-                        if (!getElementMaskValue(element)) {
+                        const elementValue = getElementMaskValue(element);
+                        if (!elementValue) {
                             return;
                         }
 
-                        if (elementMatchesPageRuleContext(element, rule)) {
+                        const meetsMinimumValueLength = elementValue.length >= (rule.minimumValueLength || 1);
+                        const matchesRuleContext = elementMatchesPageRuleContext(element, rule);
+                        const hasNearbyActions = meetsMinimumValueLength && elementHasNearbyRuleActions(element, rule);
+
+                        if (matchesRuleContext || hasNearbyActions) {
                             matchedElements.push(element);
                         }
                     });
