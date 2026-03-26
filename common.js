@@ -113,6 +113,41 @@ export const pageSpecificRules = [
         nearbyActionLabels: [
             "show",
             "hide",
+            "copy",
+            "generate",
+            "generate sas",
+            "generate sas and connection string"
+        ],
+        minimumValueLength: 16,
+        actionSearchDepth: 4,
+        interactionRescanDelays: [0, 75, 250, 500, 1000]
+    },
+    {
+        id: "azure-ai-studio-keys",
+        toggleId: "secrets",
+        urlRegexes: [
+            /ai\.azure\.com/i,
+            /resource/i
+        ],
+        contextLabels: [
+            "key",
+            "key1",
+            "key2",
+            "key 1",
+            "key 2",
+            "api key",
+            "access key",
+            "secret"
+        ],
+        valueSelectors: [
+            "input",
+            "textarea",
+            "[role='textbox']",
+            "[class*='value']"
+        ],
+        nearbyActionLabels: [
+            "show",
+            "hide",
             "copy"
         ],
         minimumValueLength: 16,

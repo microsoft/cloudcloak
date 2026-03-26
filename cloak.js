@@ -219,7 +219,7 @@ if (window.cloakScriptInjected !== true) {
                 });
             }
 
-            function runAzureStorageAccessKeyRule(rule, shouldCloak) {
+            function runContextAwarePageRule(rule, shouldCloak) {
                 const candidateSelectors = (rule.valueSelectors || []).join(", ");
                 const matchedElements = [];
                 if (candidateSelectors) {
@@ -243,8 +243,8 @@ if (window.cloakScriptInjected !== true) {
             }
 
             function runPageSpecificRule(rule, shouldCloak) {
-                if (rule.id === "azure-storage-access-keys") {
-                    runAzureStorageAccessKeyRule(rule, shouldCloak);
+                if (rule.valueSelectors?.length) {
+                    runContextAwarePageRule(rule, shouldCloak);
                 } else {
                     updatePageRuleMatches(rule, [], false);
                 }
