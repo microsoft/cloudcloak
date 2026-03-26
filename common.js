@@ -116,7 +116,8 @@ export const pageSpecificRules = [
             "copy"
         ],
         minimumValueLength: 16,
-        interactionRescanDelays: [0, 75, 250]
+        actionSearchDepth: 4,
+        interactionRescanDelays: [0, 75, 250, 500, 1000]
     }
 ];
 

@@ -109,14 +109,13 @@ if (window.cloakScriptInjected !== true) {
                 if (contextContainer) {
                     addContextValue(contextContainer.getAttribute?.("aria-label"));
 
-                    const directLabelCandidate = Array.from(contextContainer.children || []).find((child) => {
-                        if (child === element || child.contains(element)) {
-                            return false;
+                    contextContainer.querySelectorAll("label, [role='label'], [class*='label'], [class*='header'], th, dt, legend").forEach((candidate) => {
+                        if (candidate === element || candidate.contains(element)) {
+                            return;
                         }
 
-                        return child.matches("label, [role='label'], [class*='label'], [class*='header'], th, dt");
+                        addContextValue(candidate.textContent);
                     });
-                    addContextValue(directLabelCandidate?.textContent);
 
                     addContextValue(element.previousElementSibling?.textContent);
                     addContextValue(contextContainer.previousElementSibling?.textContent);
@@ -150,19 +149,23 @@ if (window.cloakScriptInjected !== true) {
                     }
                 };
 
-                const contextContainer = element.closest("[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']") || element.parentElement;
-                if (!contextContainer) {
-                    return false;
+                const contextContainers = [];
+                let currentContainer = element.closest("[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']") || element.parentElement;
+                for (let depth = 0; currentContainer && depth < (rule.actionSearchDepth || 1); depth++) {
+                    contextContainers.push(currentContainer);
+                    currentContainer = currentContainer.parentElement;
                 }
 
-                contextContainer.querySelectorAll("button, [role='button'], [title], [aria-label]").forEach((candidate) => {
-                    if (candidate === element || candidate.contains(element)) {
-                        return;
-                    }
+                contextContainers.forEach((contextContainer) => {
+                    contextContainer.querySelectorAll("button, [role='button'], [title], [aria-label]").forEach((candidate) => {
+                        if (candidate === element || candidate.contains(element)) {
+                            return;
+                        }
 
-                    addActionText(candidate.textContent);
-                    addActionText(candidate.getAttribute?.("title"));
-                    addActionText(candidate.getAttribute?.("aria-label"));
+                        addActionText(candidate.textContent);
+                        addActionText(candidate.getAttribute?.("title"));
+                        addActionText(candidate.getAttribute?.("aria-label"));
+                    });
                 });
 
                 return actionLabels.some((label) => actionTexts.some((actionText) => matchesPageRuleLabel(label, actionText)));
