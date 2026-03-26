@@ -10,6 +10,7 @@ import {
 } from '../common.js';
 
 const azureStorageAccessKeyRule = pageSpecificRules.find((rule) => rule.id === 'azure-storage-access-keys');
+const azureAiStudioKeysRule = pageSpecificRules.find((rule) => rule.id === 'azure-ai-studio-keys');
 
 test('normalizes page rule text for label matching', () => {
     assert.equal(normalizePageRuleText('  Shared   Access   Signature  '), 'shared access signature');
@@ -38,6 +39,24 @@ test('matches Azure Storage access key routes', () => {
         matchesPageRuleUrl(
             azureStorageAccessKeyRule,
             'https://portal.azure.com/#resource/subscriptions/test/resourceGroups/demo/providers/Microsoft.Storage/storageAccounts/demo/sharedaccesssignature'
+        ),
+        true
+    );
+});
+
+test('matches Azure AI Studio key routes', () => {
+    assert.equal(
+        matchesPageRuleUrl(
+            azureAiStudioKeysRule,
+            'https://ai.azure.com/resource?tid=72f988bf-86f1-41af-91ab-2d7cd011db47'
+        ),
+        true
+    );
+
+    assert.equal(
+        matchesPageRuleUrl(
+            azureAiStudioKeysRule,
+            'https://ai.azure.com/resource/subscriptions/test/resourceGroups/demo'
         ),
         true
     );
@@ -72,5 +91,10 @@ test('activates page rules only when the linked toggle is enabled', () => {
     assert.equal(
         isPageRuleActive(azureStorageAccessKeyRule, targetUrl, { secrets: false }),
         false
+    );
+
+    assert.equal(
+        isPageRuleActive(azureAiStudioKeysRule, 'https://ai.azure.com/resource?tid=test', { secrets: true }),
+        true
     );
 });
