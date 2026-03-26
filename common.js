@@ -61,6 +61,117 @@ export function isSupportedUrl(url) {
             supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
     });
 }
+
+export function normalizePageRuleText(value) {
+    return (value || "")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+}
+
+export function matchesPageRuleLabel(label, contextValue) {
+    const normalizedLabel = normalizePageRuleText(label);
+    const normalizedContextValue = normalizePageRuleText(contextValue);
+    if (!normalizedLabel || !normalizedContextValue) {
+        return false;
+    }
+
+    const labelPattern = normalizedLabel
+        .split(" ")
+        .map(escapeRegex)
+        .join("\\s+");
+
+    return new RegExp(`(^|[^a-z0-9])${labelPattern}($|[^a-z0-9])`, "i").test(normalizedContextValue);
+}
+
+export const pageSpecificRules = [
+    {
+        id: "azure-storage-access-keys",
+        toggleId: "secrets",
+        urlRegexes: [
+            /storageaccounts/i,
+            /(access[-\s]?keys|(?:\/|=)keys(?:[/?#]|$)|sharedaccesssignature|shared access signature|\bsas\b)/i
+        ],
+        contextLabels: [
+            "key",
+            "key1",
+            "key2",
+            "key 1",
+            "key 2",
+            "connection string",
+            "shared access signature",
+            "sas",
+            "signature",
+            "secret"
+        ],
+        valueSelectors: [
+            "input",
+            "textarea",
+            "[role='textbox']",
+            "[class*='value']"
+        ],
+        nearbyActionLabels: [
+            "show",
+            "hide",
+            "copy",
+            "generate",
+            "generate sas",
+            "generate sas and connection string"
+        ],
+        minimumValueLength: 16,
+        actionSearchDepth: 4,
+        interactionRescanDelays: [0, 75, 250, 500, 1000]
+    },
+    {
+        id: "azure-ai-studio-keys",
+        toggleId: "secrets",
+        urlRegexes: [
+            /ai\.azure\.com/i,
+            /resource/i
+        ],
+        contextLabels: [
+            "key",
+            "key1",
+            "key2",
+            "key 1",
+            "key 2",
+            "api key",
+            "access key",
+            "secret"
+        ],
+        valueSelectors: [
+            "input",
+            "textarea",
+            "[role='textbox']",
+            "[class*='value']"
+        ],
+        nearbyActionLabels: [
+            "show",
+            "hide",
+            "copy"
+        ],
+        minimumValueLength: 16,
+        actionSearchDepth: 4,
+        interactionRescanDelays: [0, 75, 250, 500, 1000]
+    }
+];
+
+export function matchesPageRuleUrl(rule, url) {
+    if (!rule || !url) {
+        return false;
+    }
+
+    return (rule.urlRegexes || []).every((regex) => regex.test(url));
+}
+
+export function isPageRuleActive(rule, url, toggleStates = {}) {
+    if (!rule || !rule.toggleId || !toggleStates[rule.toggleId]) {
+        return false;
+    }
+
+    return matchesPageRuleUrl(rule, url);
+}
+
 const ipAddressRegexes = [
     /(?<![0-9A-Za-z.])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![0-9A-Za-z]|\.\d)/, // IPv4
     /(?<![0-9A-Za-z:])(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}(?![0-9A-Za-z:]|\.\d)/, // IPv6 expanded

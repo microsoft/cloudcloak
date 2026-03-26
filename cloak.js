@@ -5,27 +5,33 @@ if (window.cloakScriptInjected !== true) {
         const src = chrome.runtime.getURL("./common.js");
         import(src).then((commonModule) => {
             const cloakablePatterns = commonModule.cloakablePatterns;
+            const matchesPageRuleLabel = commonModule.matchesPageRuleLabel;
+            const pageSpecificRules = commonModule.pageSpecificRules || [];
+            const isPageRuleActive = commonModule.isPageRuleActive;
+            const normalizePageRuleText = commonModule.normalizePageRuleText;
             const blurFilter = "blur(5px)";
+            const maskText = "*****";
             const resetBlur = "none";
 
             window.regexPatternsArray;
             window.toggleStates;
 
-            function tryApplyFilterOnElementTitle(element, shouldCloak) {
+            function tryApplyFilterOnElementTitle(element, shouldCloak, force = false) {
                 const titleAttribute = "title";
                 const maskTitleAttribute = "maskTitle";
-                const maskText = "*****";
 
 
                 const title = element.hasAttribute(titleAttribute) ? element.getAttribute(titleAttribute) : "";
                 const maskTitle = element.hasAttribute(maskTitleAttribute) ? element.getAttribute(maskTitleAttribute) : "";
                 if (
-                    (shouldCloak && title && matchPatterns(title)) ||
-                    (!shouldCloak && maskTitle && matchPatterns(maskTitle))
+                    (shouldCloak && title && (force || matchPatterns(title))) ||
+                    (!shouldCloak && maskTitle && (force || matchPatterns(maskTitle)))
                 ) {
                     if (shouldCloak) {
                         element.setAttribute(titleAttribute, maskText);
-                        element.setAttribute(maskTitleAttribute, title);
+                        if (!maskTitle) {
+                            element.setAttribute(maskTitleAttribute, title);
+                        }
                     } else {
                         element.setAttribute(titleAttribute, maskTitle);
                         element.removeAttribute(maskTitleAttribute);
@@ -52,6 +58,244 @@ if (window.cloakScriptInjected !== true) {
                 }
 
                 return null;
+            }
+
+            function getPageRuleMaskAttribute(ruleId) {
+                return `data-cloudcloak-page-rule-${ruleId}`;
+            }
+
+            function getActivePageRules() {
+                return pageSpecificRules.filter((rule) => isPageRuleActive(rule, window.location.href, window.toggleStates));
+            }
+
+            function getElementMaskValue(element) {
+                if (!element) {
+                    return "";
+                }
+
+                return (element.value || element.textContent || element.getAttribute("title") || "").trim();
+            }
+
+            function collectRuleContextText(element) {
+                const contextValues = [];
+                const addContextValue = (value) => {
+                    const normalizedValue = normalizePageRuleText(value);
+                    if (normalizedValue) {
+                        contextValues.push(normalizedValue);
+                    }
+                };
+
+                if (!element) {
+                    return contextValues;
+                }
+
+                ["aria-label", "placeholder", "name", "id", "title"].forEach((attributeName) => {
+                    addContextValue(element.getAttribute(attributeName));
+                });
+
+                const labelledBy = (element.getAttribute("aria-labelledby") || "")
+                    .split(/\s+/)
+                    .map((id) => id.trim())
+                    .filter(Boolean);
+                labelledBy.forEach((labelId) => {
+                    addContextValue(document.getElementById(labelId)?.textContent);
+                });
+
+                if (element.labels) {
+                    Array.from(element.labels).forEach((label) => addContextValue(label.textContent));
+                }
+
+                const contextContainer = element.closest("[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']") || element.parentElement;
+                if (contextContainer) {
+                    addContextValue(contextContainer.getAttribute?.("aria-label"));
+
+                    contextContainer.querySelectorAll("label, [role='label'], [class*='label'], [class*='header'], th, dt, legend").forEach((candidate) => {
+                        if (candidate === element || candidate.contains(element)) {
+                            return;
+                        }
+
+                        addContextValue(candidate.textContent);
+                    });
+
+                    addContextValue(element.previousElementSibling?.textContent);
+                    addContextValue(contextContainer.previousElementSibling?.textContent);
+                    addContextValue(contextContainer.parentElement?.previousElementSibling?.textContent);
+                }
+
+                return contextValues;
+            }
+
+            function elementMatchesPageRuleContext(element, rule) {
+                const labels = rule.contextLabels || [];
+                if (labels.length === 0) {
+                    return false;
+                }
+
+                const contextValues = collectRuleContextText(element);
+                return labels.some((label) => contextValues.some((contextValue) => matchesPageRuleLabel(label, contextValue)));
+            }
+
+            function elementHasNearbyRuleActions(element, rule) {
+                const actionLabels = rule.nearbyActionLabels || [];
+                if (actionLabels.length === 0) {
+                    return false;
+                }
+
+                const actionTexts = [];
+                const addActionText = (value) => {
+                    const normalizedValue = normalizePageRuleText(value);
+                    if (normalizedValue) {
+                        actionTexts.push(normalizedValue);
+                    }
+                };
+
+                const contextContainers = [];
+                let currentContainer = element.closest("[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']") || element.parentElement;
+                for (let depth = 0; currentContainer && depth < (rule.actionSearchDepth || 1); depth++) {
+                    contextContainers.push(currentContainer);
+                    currentContainer = currentContainer.parentElement;
+                }
+
+                contextContainers.forEach((contextContainer) => {
+                    contextContainer.querySelectorAll("button, [role='button'], [title], [aria-label]").forEach((candidate) => {
+                        if (candidate === element || candidate.contains(element)) {
+                            return;
+                        }
+
+                        addActionText(candidate.textContent);
+                        addActionText(candidate.getAttribute?.("title"));
+                        addActionText(candidate.getAttribute?.("aria-label"));
+                    });
+                });
+
+                return actionLabels.some((label) => actionTexts.some((actionText) => matchesPageRuleLabel(label, actionText)));
+            }
+
+            function applyPageRuleMaskToElement(element, shouldCloak, ruleId) {
+                if (!element) {
+                    return;
+                }
+
+                const ruleMaskAttribute = getPageRuleMaskAttribute(ruleId);
+                if (shouldCloak) {
+                    element.style.filter = blurFilter;
+                    element.setAttribute(ruleMaskAttribute, "true");
+                    tryApplyFilterOnElementTitle(element, true, true);
+                    return;
+                }
+
+                if (!element.hasAttribute(ruleMaskAttribute)) {
+                    return;
+                }
+
+                element.removeAttribute(ruleMaskAttribute);
+                const shouldKeepMaskedByPattern = matchPatterns(getElementMaskValue(element));
+                const originalTitle = element.getAttribute("maskTitle") || "";
+
+                element.style.filter = shouldKeepMaskedByPattern ? blurFilter : resetBlur;
+                if (originalTitle && matchPatterns(originalTitle)) {
+                    element.setAttribute("title", maskText);
+                } else {
+                    tryApplyFilterOnElementTitle(element, false, true);
+                }
+            }
+
+            function updatePageRuleMatches(rule, matchedElements, shouldCloak) {
+                const maskedElements = document.querySelectorAll(`[${getPageRuleMaskAttribute(rule.id)}]`);
+                const matchedElementSet = new Set(matchedElements);
+
+                maskedElements.forEach((element) => {
+                    if (!shouldCloak || !matchedElementSet.has(element)) {
+                        applyPageRuleMaskToElement(element, false, rule.id);
+                    }
+                });
+
+                if (!shouldCloak) {
+                    return;
+                }
+
+                matchedElements.forEach((element) => {
+                    applyPageRuleMaskToElement(element, true, rule.id);
+                });
+            }
+
+            function runContextAwarePageRule(rule, shouldCloak) {
+                const candidateSelectors = (rule.valueSelectors || []).join(", ");
+                const matchedElements = [];
+                if (candidateSelectors) {
+                    document.querySelectorAll(candidateSelectors).forEach((element) => {
+                        const elementValue = getElementMaskValue(element);
+                        if (!elementValue) {
+                            return;
+                        }
+
+                        const meetsMinimumValueLength = elementValue.length >= (rule.minimumValueLength || 1);
+                        const matchesRuleContext = elementMatchesPageRuleContext(element, rule);
+                        const hasNearbyActions = meetsMinimumValueLength && elementHasNearbyRuleActions(element, rule);
+
+                        if (matchesRuleContext || hasNearbyActions) {
+                            matchedElements.push(element);
+                        }
+                    });
+                }
+
+                updatePageRuleMatches(rule, matchedElements, shouldCloak);
+            }
+
+            function runPageSpecificRule(rule, shouldCloak) {
+                if (rule.valueSelectors?.length) {
+                    runContextAwarePageRule(rule, shouldCloak);
+                } else {
+                    updatePageRuleMatches(rule, [], false);
+                }
+            }
+
+            function runPageSpecificRules(applyFilter) {
+                const activePageRules = new Set(getActivePageRules().map((rule) => rule.id));
+
+                pageSpecificRules.forEach((rule) => {
+                    runPageSpecificRule(rule, applyFilter && activePageRules.has(rule.id));
+                });
+            }
+
+            function schedulePageSpecificRuleRescan() {
+                const activePageRules = getActivePageRules();
+                if (activePageRules.length === 0) {
+                    return;
+                }
+
+                window.pageRuleRescanTimeouts = window.pageRuleRescanTimeouts || [];
+                window.pageRuleRescanTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+                window.pageRuleRescanTimeouts = [];
+
+                const rescanDelays = [...new Set(activePageRules.flatMap((rule) => rule.interactionRescanDelays || [0]))];
+                rescanDelays.forEach((delay) => {
+                    window.pageRuleRescanTimeouts.push(setTimeout(() => {
+                        runPageSpecificRules(true);
+                    }, delay));
+                });
+            }
+
+            function ensurePageRuleInteractionHandlers() {
+                if (window.pageRuleInteractionHandlersRegistered) {
+                    return;
+                }
+
+                const scheduleTrustedRescan = (event) => {
+                    if (!event.isTrusted) {
+                        return;
+                    }
+
+                    if (event.type === "keydown" && event.key !== "Enter" && event.key !== " ") {
+                        return;
+                    }
+
+                    schedulePageSpecificRuleRescan();
+                };
+
+                document.addEventListener("click", scheduleTrustedRescan, true);
+                document.addEventListener("keydown", scheduleTrustedRescan, true);
+                window.pageRuleInteractionHandlersRegistered = true;
             }
 
             function specialHandlingForAzurePortalEssentialsValues(applyFilter) {
@@ -262,10 +506,12 @@ if (window.cloakScriptInjected !== true) {
 
                 specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter);
                 specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && applyFilter);
+                runPageSpecificRules(applyFilter);
             }
             function toggleCloak() {
                 // Update the regex patterns
                 updateRegexPatterns();
+                ensurePageRuleInteractionHandlers();
 
                 if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo) {
                     getAllNodesAndApplyFilter(true);
@@ -304,6 +550,7 @@ if (window.cloakScriptInjected !== true) {
                     window.secretHandlingTimeout = setTimeout(() => {
                         specialHandlingForPasswordFieldsAndTablesWithSecrets(true /* If observer is running we are in cloak mode */);
                         specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && true /* If observer is running we are in cloak mode */);
+                        runPageSpecificRules(true /* If observer is running we are in cloak mode */);
                     }, 50);
                 });
             }
