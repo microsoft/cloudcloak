@@ -62,6 +62,14 @@ export function isSupportedUrl(url) {
     });
 }
 
+export const cloakObserverOptions = {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["title"]
+};
+
 export function normalizePageRuleText(value) {
     return (value || "")
         .replace(/\s+/g, " ")
