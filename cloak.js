@@ -5,6 +5,7 @@ if (window.cloakScriptInjected !== true) {
         const src = chrome.runtime.getURL("./common.js");
         import(src).then((commonModule) => {
             const cloakablePatterns = commonModule.cloakablePatterns;
+            const cloakObserverOptions = commonModule.cloakObserverOptions;
             const matchesPageRuleLabel = commonModule.matchesPageRuleLabel;
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
@@ -408,6 +409,8 @@ if (window.cloakScriptInjected !== true) {
                 if (node.nodeType === Node.TEXT_NODE || node.nodeName === "INPUT") {
                     tryMatchAndApplyFilterOnTextNode(node, applyFilter);
                 } else if (node.nodeType === Node.ELEMENT_NODE) {
+                    tryApplyFilterOnElementTitle(node, applyFilter);
+
                     // Handle child nodes
                     for (const child of node.childNodes) {
                         if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
@@ -516,11 +519,7 @@ if (window.cloakScriptInjected !== true) {
                 if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
-                    window.cloakObserver && window.cloakObserver.observe(document.body, {
-                        childList: true,    // Watch for added/removed elements
-                        subtree: true,      // Watch the entire subtree of the document
-                        characterData: true // Watch for text content changes (SPA updates)
-                    });
+                    window.cloakObserver && window.cloakObserver.observe(document.body, cloakObserverOptions);
                 } else {
                     getAllNodesAndApplyFilter(false);
                     window.cloakObserver && window.cloakObserver.disconnect();
@@ -538,6 +537,9 @@ if (window.cloakScriptInjected !== true) {
                     for (const mutation of mutationList) {
                         if (mutation.type === 'characterData') {
                             // Text content changed in-place (common in SPAs like Azure Portal)
+                            applyFilterOnNode(mutation.target, true);
+                        }
+                        if (mutation.type === 'attributes') {
                             applyFilterOnNode(mutation.target, true);
                         }
                         mutation.addedNodes.forEach((node) => {
