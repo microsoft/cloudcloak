@@ -128,7 +128,12 @@ export const pageSpecificRules = [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre"
         ],
         nearbyActionLabels: [
             "show",
@@ -138,6 +143,7 @@ export const pageSpecificRules = [
             "generate sas",
             "generate sas and connection string"
         ],
+        maskClosestSelector: "[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]

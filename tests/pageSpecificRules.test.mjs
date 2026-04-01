@@ -44,6 +44,13 @@ test('matches Azure Storage access key routes', () => {
     );
 });
 
+test('Azure Storage access key rule targets reveal-flow containers and output-like elements', () => {
+    assert.equal(azureStorageAccessKeyRule.maskClosestSelector.includes("[role='row']"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("[class*='output']"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("code"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("pre"), true);
+});
+
 test('matches Azure AI Studio key routes', () => {
     assert.equal(
         matchesPageRuleUrl(

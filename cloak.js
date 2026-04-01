@@ -65,6 +65,18 @@ if (window.cloakScriptInjected !== true) {
                 return `data-cloudcloak-page-rule-${ruleId}`;
             }
 
+            function getPageRuleMaskTarget(element, rule) {
+                if (!element) {
+                    return null;
+                }
+
+                if (!rule?.maskClosestSelector) {
+                    return element;
+                }
+
+                return element.closest(rule.maskClosestSelector) || element;
+            }
+
             function getActivePageRules() {
                 return pageSpecificRules.filter((rule) => isPageRuleActive(rule, window.location.href, window.toggleStates));
             }
@@ -223,6 +235,7 @@ if (window.cloakScriptInjected !== true) {
             function runContextAwarePageRule(rule, shouldCloak) {
                 const candidateSelectors = (rule.valueSelectors || []).join(", ");
                 const matchedElements = [];
+                const matchedElementSet = new Set();
                 if (candidateSelectors) {
                     document.querySelectorAll(candidateSelectors).forEach((element) => {
                         const elementValue = getElementMaskValue(element);
@@ -235,7 +248,11 @@ if (window.cloakScriptInjected !== true) {
                         const hasNearbyActions = meetsMinimumValueLength && elementHasNearbyRuleActions(element, rule);
 
                         if (matchesRuleContext || hasNearbyActions) {
-                            matchedElements.push(element);
+                            const maskTarget = getPageRuleMaskTarget(element, rule);
+                            if (maskTarget && !matchedElementSet.has(maskTarget)) {
+                                matchedElementSet.add(maskTarget);
+                                matchedElements.push(maskTarget);
+                            }
                         }
                     });
                 }
