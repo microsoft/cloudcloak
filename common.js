@@ -23,6 +23,18 @@ export const supportedDomains = [
     'https://*.reactblade.portal.azure.net'
 ];
 
+const exactSupportedHostPermissionPatterns = supportedDomains
+    .filter((supportedDomain) => !supportedDomain.includes('*'))
+    .map((supportedDomain) => `${supportedDomain}/*`);
+
+export const supportedHostPermissionPatterns = [
+    ...exactSupportedHostPermissionPatterns,
+    'https://*.reactblade-ms.portal.azure.net/*',
+    'https://*.reactblade.portal.azure.net/*',
+    // Chrome host match patterns cannot express reactblade-ms*.portal.azure.net or reactblade*.portal.azure.net.
+    'https://*.portal.azure.net/*'
+];
+
 function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
