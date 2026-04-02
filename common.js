@@ -23,6 +23,18 @@ export const supportedDomains = [
     'https://*.reactblade.portal.azure.net'
 ];
 
+const exactSupportedHostPermissionPatterns = supportedDomains
+    .filter((supportedDomain) => !supportedDomain.includes('*'))
+    .map((supportedDomain) => `${supportedDomain}/*`);
+
+export const supportedHostPermissionPatterns = [
+    ...exactSupportedHostPermissionPatterns,
+    'https://*.reactblade-ms.portal.azure.net/*',
+    'https://*.reactblade.portal.azure.net/*',
+    // Chrome host match patterns cannot express reactblade-ms*.portal.azure.net or reactblade*.portal.azure.net.
+    'https://*.portal.azure.net/*'
+];
+
 function escapeRegex(value) {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -61,6 +73,14 @@ export function isSupportedUrl(url) {
             supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
     });
 }
+
+export const cloakObserverOptions = {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["title", "class", "style", "hidden", "aria-expanded", "aria-hidden", "data-cloudcloak"]
+};
 
 export function normalizePageRuleText(value) {
     return (value || "")
@@ -108,7 +128,12 @@ export const pageSpecificRules = [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre"
         ],
         nearbyActionLabels: [
             "show",
@@ -118,6 +143,7 @@ export const pageSpecificRules = [
             "generate sas",
             "generate sas and connection string"
         ],
+        maskClosestSelector: "[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]
@@ -137,19 +163,31 @@ export const pageSpecificRules = [
             "key 2",
             "api key",
             "access key",
-            "secret"
+            "secret",
+            "created by",
+            "modified by",
+            "endpoint",
+            "endpoint uri",
+            "base url"
         ],
         valueSelectors: [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre",
+            "a[href]"
         ],
         nearbyActionLabels: [
             "show",
             "hide",
             "copy"
         ],
+        maskClosestSelector: "[class*='form'], [class*='row'], [role='row'], [role='group'], [class*='section']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]

@@ -23,7 +23,29 @@
     }
   },
   "web_accessible_resources": [{
-     "matches": ["<all_urls>"],
+     "matches": [
+       "https://portal.azure.com/*",
+       "https://ms.portal.azure.com/*",
+       "https://rc.portal.azure.com/*",
+       "https://preview.portal.azure.com/*",
+       "https://entra.microsoft.com/*",
+       "https://intune.microsoft.com/*",
+       "https://ai.azure.com/*",
+       "https://admin.microsoft.com/*",
+       "https://sip.security.microsoft.com/*",
+       "https://purview.microsoft.com/*",
+       "https://make.powerapps.com/*",
+       "https://make.preview.powerapps.com/*",
+       "https://msazure.visualstudio.com/*",
+       "https://github.com/*",
+       "https://copilotstudio.microsoft.com/*",
+       "https://copilotstudio.preview.microsoft.com/*",
+       "https://reactblade-ms.portal.azure.net/*",
+       "https://reactblade.portal.azure.net/*",
+       "https://*.reactblade-ms.portal.azure.net/*",
+       "https://*.reactblade.portal.azure.net/*",
+       "https://*.portal.azure.net/*"
+     ],
      "resources": ["common.js"]
    }],
   "permissions": [
@@ -33,6 +55,26 @@
     "storage"
   ],
   "host_permissions": [
-    "https://*/"
+    "https://portal.azure.com/*",
+    "https://ms.portal.azure.com/*",
+    "https://rc.portal.azure.com/*",
+    "https://preview.portal.azure.com/*",
+    "https://entra.microsoft.com/*",
+    "https://intune.microsoft.com/*",
+    "https://ai.azure.com/*",
+    "https://admin.microsoft.com/*",
+    "https://sip.security.microsoft.com/*",
+    "https://purview.microsoft.com/*",
+    "https://make.powerapps.com/*",
+    "https://make.preview.powerapps.com/*",
+    "https://msazure.visualstudio.com/*",
+    "https://github.com/*",
+    "https://copilotstudio.microsoft.com/*",
+    "https://copilotstudio.preview.microsoft.com/*",
+    "https://reactblade-ms.portal.azure.net/*",
+    "https://reactblade.portal.azure.net/*",
+    "https://*.reactblade-ms.portal.azure.net/*",
+    "https://*.reactblade.portal.azure.net/*",
+    "https://*.portal.azure.net/*"
   ]
 }
