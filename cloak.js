@@ -481,7 +481,7 @@ if (window.cloakScriptInjected !== true) {
             }
 
             function specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter) {
-                const passwordLikeText = ["password", "key", "secret"];
+                const passwordLikeText = ["password", "key", "secret", "token", "connection string", "client secret"];
                 const filter = applyFilter ? blurFilter : resetBlur;
 
                 // Find all input password fields and apply the filter so they appear blurred
@@ -517,6 +517,32 @@ if (window.cloakScriptInjected !== true) {
                                 }
                             });
                         }
+                    });
+                });
+
+                const secureFieldContainers = document.querySelectorAll("[class*='form'], [class*='row'], [role='row'], [role='group'], [class*='section']");
+                secureFieldContainers.forEach((container) => {
+                    const labelCandidates = container.querySelectorAll("label, [role='label'], [class*='label'], [class*='header'], dt, legend");
+                    const hasSecureLabel = Array.from(labelCandidates).some((label) =>
+                        passwordLikeText.some((pwdLikeText) => label.textContent?.toLowerCase()?.includes(pwdLikeText))
+                    );
+                    if (!hasSecureLabel) {
+                        return;
+                    }
+
+                    const valueCandidates = container.querySelectorAll("input:not([type='password']), textarea, [role='textbox'], [class*='value'], [class*='output'], [class*='content'], [class*='text'], code, pre, a[href]");
+                    valueCandidates.forEach((valueCandidate) => {
+                        if (labelCandidates.length > 0 && Array.from(labelCandidates).some((label) => label.contains(valueCandidate))) {
+                            return;
+                        }
+
+                        const valueText = getElementMaskValue(valueCandidate);
+                        if (!valueText || valueText.length < 3) {
+                            return;
+                        }
+
+                        valueCandidate.style.filter = filter;
+                        tryApplyFilterOnElementTitle(valueCandidate, applyFilter, true);
                     });
                 });
             }

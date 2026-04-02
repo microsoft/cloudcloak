@@ -21,6 +21,8 @@ test('normalizes page rule text for label matching', () => {
 test('matches page rule labels on word boundaries instead of substrings', () => {
     assert.equal(matchesPageRuleLabel('key', 'Storage account key'), true);
     assert.equal(matchesPageRuleLabel('connection string', 'Primary connection string'), true);
+    assert.equal(matchesPageRuleLabel('client secret', 'Client Secret value'), true);
+    assert.equal(matchesPageRuleLabel('token', 'Access token'), true);
     assert.equal(matchesPageRuleLabel('key', 'Search keywords'), false);
     assert.equal(matchesPageRuleLabel('key', 'Keyboard shortcut'), false);
     assert.equal(matchesPageRuleLabel('key 1', 'Key 1'), true);
