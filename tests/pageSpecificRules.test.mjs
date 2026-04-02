@@ -69,6 +69,16 @@ test('matches Azure AI Studio key routes', () => {
     );
 });
 
+test('Azure AI Studio rule covers metadata fields and output-like containers', () => {
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('created by'), true);
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('modified by'), true);
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('endpoint uri'), true);
+    assert.equal(azureAiStudioKeysRule.valueSelectors.includes('[class*="output"]'), false);
+    assert.equal(azureAiStudioKeysRule.valueSelectors.includes("[class*='output']"), true);
+    assert.equal(azureAiStudioKeysRule.valueSelectors.includes('a[href]'), true);
+    assert.equal(azureAiStudioKeysRule.maskClosestSelector.includes("[role='row']"), true);
+});
+
 test('does not match unrelated Azure Storage routes', () => {
     assert.equal(
         matchesPageRuleUrl(
