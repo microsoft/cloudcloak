@@ -29,3 +29,13 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 2. Look for an existing issue that describes your scenario
 3. OR create a new issue
    - Please provide detailed steps to reproduce the issue
+
+## Opt-in page markers
+
+If a product team controls the page markup and wants to explicitly opt content into masking, Cloud Cloak now honors a simple marker contract:
+
+- `data-cloudcloak="cloak"`
+- `data-cloudcloak="mask"`
+- `data-cloudcloak="sensitive"`
+
+Applying one of those attributes to an element tells the extension to blur that element even when the content would not otherwise match a regex or page-specific rule. This is optional and additive; when the marker is absent, Cloud Cloak falls back to its normal masking behavior.

@@ -65,6 +65,19 @@ if (window.cloakScriptInjected !== true) {
                 return `data-cloudcloak-page-rule-${ruleId}`;
             }
 
+            function getExplicitCloakMarkerValue(element) {
+                if (!element || !element.getAttribute) {
+                    return "";
+                }
+
+                return normalizePageRuleText(element.getAttribute("data-cloudcloak"));
+            }
+
+            function shouldForceMaskElement(element) {
+                const markerValue = getExplicitCloakMarkerValue(element);
+                return markerValue === "cloak" || markerValue === "mask" || markerValue === "sensitive";
+            }
+
             function getPageRuleMaskTarget(element, rule) {
                 if (!element) {
                     return null;
@@ -427,7 +440,10 @@ if (window.cloakScriptInjected !== true) {
                 if (node.nodeType === Node.TEXT_NODE || node.nodeName === "INPUT") {
                     tryMatchAndApplyFilterOnTextNode(node, applyFilter);
                 } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    tryApplyFilterOnElementTitle(node, applyFilter);
+                    tryApplyFilterOnElementTitle(node, applyFilter, shouldForceMaskElement(node));
+                    if (shouldForceMaskElement(node)) {
+                        node.style.filter = applyFilter ? blurFilter : resetBlur;
+                    }
 
                     // Handle child nodes
                     for (const child of node.childNodes) {

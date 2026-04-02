@@ -7,7 +7,7 @@ test('observes title and visibility-related attribute mutations for dynamic mask
     assert.equal(cloakObserverOptions.attributes, true);
     assert.deepEqual(
         cloakObserverOptions.attributeFilter,
-        ['title', 'class', 'style', 'hidden', 'aria-expanded', 'aria-hidden']
+        ['title', 'class', 'style', 'hidden', 'aria-expanded', 'aria-hidden', 'data-cloudcloak']
     );
     assert.equal(cloakObserverOptions.childList, true);
     assert.equal(cloakObserverOptions.subtree, true);

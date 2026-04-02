@@ -79,7 +79,7 @@ export const cloakObserverOptions = {
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["title", "class", "style", "hidden", "aria-expanded", "aria-hidden"]
+    attributeFilter: ["title", "class", "style", "hidden", "aria-expanded", "aria-hidden", "data-cloudcloak"]
 };
 
 export function normalizePageRuleText(value) {
