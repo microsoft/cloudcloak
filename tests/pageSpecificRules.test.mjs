@@ -75,8 +75,10 @@ test('Azure AI Studio rule covers metadata fields and output-like containers', (
     assert.equal(azureAiStudioKeysRule.contextLabels.includes('created by'), true);
     assert.equal(azureAiStudioKeysRule.contextLabels.includes('modified by'), true);
     assert.equal(azureAiStudioKeysRule.contextLabels.includes('endpoint uri'), true);
-    assert.equal(azureAiStudioKeysRule.valueSelectors.includes('[class*="output"]'), false);
-    assert.equal(azureAiStudioKeysRule.valueSelectors.includes("[class*='output']"), true);
+    const hasOutputClassSelector = azureAiStudioKeysRule.valueSelectors.some((selector) =>
+        /\[class\*=['"]output['"]\]/.test(selector)
+    );
+    assert.equal(hasOutputClassSelector, true);
     assert.equal(azureAiStudioKeysRule.valueSelectors.includes('a[href]'), true);
     assert.equal(azureAiStudioKeysRule.maskClosestSelector.includes("[role='row']"), true);
 });

@@ -431,7 +431,7 @@ if (window.cloakScriptInjected !== true) {
                 }
             }
 
-            function applyFilterOnNode(node, applyFilter) {
+            function applyFilterOnNode(node, applyFilter, shouldRecurse = true) {
                 // Ignore script and style tags
                 if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE" || node.nodeName === "svg" || node.nodeType == Node.COMMENT_NODE) {
                     return;
@@ -446,18 +446,20 @@ if (window.cloakScriptInjected !== true) {
                     }
 
                     // Handle child nodes
-                    for (const child of node.childNodes) {
-                        if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
-                            break;
-                        }
+                    if (shouldRecurse) {
+                        for (const child of node.childNodes) {
+                            if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
+                                break;
+                            }
 
-                        // Recurse into child nodes
-                        if (child.childNodes && child.childNodes.length > 0) {
-                            applyFilterOnNode(child, applyFilter);
+                            // Recurse into child nodes
+                            if (child.childNodes && child.childNodes.length > 0) {
+                                applyFilterOnNode(child, applyFilter);
+                            }
                         }
                     }
 
-                    if (node.shadowRoot && node.shadowRoot.childNodes.length > 0) {
+                    if (shouldRecurse && node.shadowRoot && node.shadowRoot.childNodes.length > 0) {
                         applyFilterOnNode(node.shadowRoot, applyFilter);
                     }
                 }
@@ -540,7 +542,7 @@ if (window.cloakScriptInjected !== true) {
                 secureFieldContainers.forEach((container) => {
                     const labelCandidates = container.querySelectorAll("label, [role='label'], [class*='label'], [class*='header'], dt, legend");
                     const hasSecureLabel = Array.from(labelCandidates).some((label) =>
-                        passwordLikeText.some((pwdLikeText) => label.textContent?.toLowerCase()?.includes(pwdLikeText))
+                        passwordLikeText.some((pwdLikeText) => matchesPageRuleLabel(pwdLikeText, label.textContent))
                     );
                     if (!hasSecureLabel) {
                         return;
@@ -600,7 +602,8 @@ if (window.cloakScriptInjected !== true) {
                             applyFilterOnNode(mutation.target, true);
                         }
                         if (mutation.type === 'attributes') {
-                            applyFilterOnNode(mutation.target, true);
+                            const shouldDeepScan = mutation.attributeName !== 'class' && mutation.attributeName !== 'style';
+                            applyFilterOnNode(mutation.target, true, shouldDeepScan);
                         }
                         mutation.addedNodes.forEach((node) => {
                             applyFilterOnNode(node, true /* If observer is running we are in cloak mode */);
