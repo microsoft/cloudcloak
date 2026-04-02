@@ -163,19 +163,31 @@ export const pageSpecificRules = [
             "key 2",
             "api key",
             "access key",
-            "secret"
+            "secret",
+            "created by",
+            "modified by",
+            "endpoint",
+            "endpoint uri",
+            "base url"
         ],
         valueSelectors: [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre",
+            "a[href]"
         ],
         nearbyActionLabels: [
             "show",
             "hide",
             "copy"
         ],
+        maskClosestSelector: "[class*='form'], [class*='row'], [role='row'], [role='group'], [class*='section']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]
