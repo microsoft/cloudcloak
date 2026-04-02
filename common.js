@@ -79,7 +79,7 @@ export const cloakObserverOptions = {
     subtree: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["title"]
+    attributeFilter: ["title", "class", "style", "hidden", "aria-expanded", "aria-hidden"]
 };
 
 export function normalizePageRuleText(value) {

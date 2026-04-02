@@ -311,6 +311,7 @@ if (window.cloakScriptInjected !== true) {
                     schedulePageSpecificRuleRescan();
                 };
 
+                document.addEventListener("mousedown", scheduleTrustedRescan, true);
                 document.addEventListener("click", scheduleTrustedRescan, true);
                 document.addEventListener("keydown", scheduleTrustedRescan, true);
                 window.pageRuleInteractionHandlersRegistered = true;
