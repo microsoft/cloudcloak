@@ -34,6 +34,7 @@ function getRepresentativeSupportedUrl(supportedDomain) {
     return supportedDomain
         .replace('reactblade-ms*', 'reactblade-ms123')
         .replace('reactblade*', 'reactblade123')
+        .replace('https://*.github.com', 'https://gist.github.com')
         .replace('https://*.reactblade-ms.portal.azure.net', 'https://child.reactblade-ms.portal.azure.net')
         .replace('https://*.reactblade.portal.azure.net', 'https://child.reactblade.portal.azure.net');
 }

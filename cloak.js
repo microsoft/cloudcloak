@@ -10,6 +10,7 @@ if (window.cloakScriptInjected !== true) {
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
             const normalizePageRuleText = commonModule.normalizePageRuleText;
+            const shouldHideGitHubStaffBar = commonModule.shouldHideGitHubStaffBar;
             const blurFilter = "blur(5px)";
             const maskText = "*****";
             const resetBlur = "none";
@@ -564,6 +565,40 @@ if (window.cloakScriptInjected !== true) {
                     });
                 });
             }
+            function setGitHubStaffBarVisibility(shouldHide) {
+                if (!shouldHideGitHubStaffBar(window.location.href)) {
+                    return;
+                }
+
+                const staffBar = document.querySelector("#serverstats[aria-label='Staff Bar'], section#serverstats.server-stats");
+                const originalDisplayAttribute = "data-cloudcloak-staffbar-display";
+                if (!staffBar) {
+                    return;
+                }
+
+                if (shouldHide) {
+                    if (!staffBar.hasAttribute(originalDisplayAttribute)) {
+                        staffBar.setAttribute(originalDisplayAttribute, staffBar.style.display || "");
+                    }
+                    if (staffBar.style.display !== "none") {
+                        staffBar.style.display = "none";
+                    }
+                    return;
+                }
+
+                if (!staffBar.hasAttribute(originalDisplayAttribute)) {
+                    return;
+                }
+
+                const originalDisplay = staffBar.getAttribute(originalDisplayAttribute);
+                if (originalDisplay) {
+                    staffBar.style.display = originalDisplay;
+                } else {
+                    staffBar.style.removeProperty("display");
+                }
+                staffBar.removeAttribute(originalDisplayAttribute);
+            }
+
             function getAllNodesAndApplyFilter(applyFilter) {
                 if (document.body) {
                     applyFilterOnNode(document.body, applyFilter);
@@ -571,6 +606,7 @@ if (window.cloakScriptInjected !== true) {
 
                 specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter);
                 specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && applyFilter);
+                setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar && applyFilter);
                 runPageSpecificRules(applyFilter);
             }
             function toggleCloak() {
@@ -578,7 +614,7 @@ if (window.cloakScriptInjected !== true) {
                 updateRegexPatterns();
                 ensurePageRuleInteractionHandlers();
 
-                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo) {
+                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo || window.toggleStates?.githubstaffbar) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
                     window.cloakObserver && window.cloakObserver.observe(document.body, cloakObserverOptions);
@@ -615,6 +651,7 @@ if (window.cloakScriptInjected !== true) {
                     window.secretHandlingTimeout = setTimeout(() => {
                         specialHandlingForPasswordFieldsAndTablesWithSecrets(true /* If observer is running we are in cloak mode */);
                         specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && true /* If observer is running we are in cloak mode */);
+                        setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar /* If observer is running we are in cloak mode */);
                         runPageSpecificRules(true /* If observer is running we are in cloak mode */);
                     }, 50);
                 });

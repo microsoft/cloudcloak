@@ -44,6 +44,7 @@
        "https://reactblade.portal.azure.net/*",
        "https://*.reactblade-ms.portal.azure.net/*",
        "https://*.reactblade.portal.azure.net/*",
+       "https://*.github.com/*",
        "https://*.portal.azure.net/*"
      ],
      "resources": ["common.js"]
@@ -75,6 +76,7 @@
     "https://reactblade.portal.azure.net/*",
     "https://*.reactblade-ms.portal.azure.net/*",
     "https://*.reactblade.portal.azure.net/*",
+    "https://*.github.com/*",
     "https://*.portal.azure.net/*"
   ]
 }

@@ -13,6 +13,7 @@ const baseSupportedDomains = [
     'https://make.preview.powerapps.com',
     'https://msazure.visualstudio.com',
     'https://github.com',
+    'https://*.github.com',
     'https://copilotstudio.microsoft.com',
     'https://copilotstudio.preview.microsoft.com',
     'https://reactblade-ms.portal.azure.net',
@@ -51,6 +52,7 @@ export const supportedHostPermissionPatterns = [
     ...exactSupportedHostPermissionPatterns,
     'https://*.reactblade-ms.portal.azure.net/*',
     'https://*.reactblade.portal.azure.net/*',
+    'https://*.github.com/*',
     // Chrome host match patterns cannot express reactblade-ms*.portal.azure.net or reactblade*.portal.azure.net.
     'https://*.portal.azure.net/*'
 ];
@@ -92,6 +94,16 @@ export function isSupportedUrl(url) {
         return currentUrl.protocol === supportedDomainMatcher.protocol &&
             supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
     });
+}
+
+export function shouldHideGitHubStaffBar(url) {
+    if (!url) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+    return currentUrl.protocol === 'https:' &&
+        (currentUrl.hostname === 'github.com' || currentUrl.hostname.endsWith('.github.com'));
 }
 
 export const cloakObserverOptions = {
@@ -299,6 +311,12 @@ export const cloakablePatterns = [
         id: 'subscriptioninfo',
         label: 'Subscription Info',
         category: 'Subscription Info',
+        regexes: []
+    },
+    {
+        id: 'githubstaffbar',
+        label: 'Hide GitHub Staff Bar',
+        category: 'GitHub',
         regexes: []
     }
 ];
