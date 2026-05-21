@@ -39,3 +39,21 @@ If a product team controls the page markup and wants to explicitly opt content i
 - `data-cloudcloak="sensitive"`
 
 Applying one of those attributes to an element tells the extension to blur that element even when the content would not otherwise match a regex or page-specific rule. This is optional and additive; when the marker is absent, Cloud Cloak falls back to its normal masking behavior.
+
+## Local mock portal for testing
+
+For local manual testing, the repo now includes a lightweight Azure-like mock site under `mock-portal/`.
+
+1. Start the local site:
+   - `npm run dev:site`
+2. Build the dev manifest that allows localhost:
+   - `npm run dev:extension`
+3. In Edge or Chrome, load the extension from the repo folder, but use the generated `dist/manifest.json` for the dev-only localhost-enabled build.
+4. Open `http://localhost:4173/` and walk through the scenario pages:
+   - Storage reveal flows
+   - AI Studio metadata
+   - Dropdowns and tooltips
+   - Secure labeled fields
+   - Explicit `data-cloudcloak` markers
+
+This local harness uses fake data and is intended for regression testing of masking behavior, not for a full Azure Portal clone.

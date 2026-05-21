@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Dropdowns and Tooltips</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="shell">
+        <aside class="nav">
+            <h1>Mock Portal</h1>
+            <a href="./index.html">Overview</a>
+            <a href="./dropdown-tooltip.html">Dropdowns and tooltips</a>
+        </aside>
+        <main class="main">
+            <section class="card">
+                <h2>CDN-style dropdown</h2>
+                <div class="dropdown">
+                    <button id="dropdown-button" type="button" aria-expanded="false">Origin name</button>
+                    <div id="dropdown-menu" class="menu" hidden aria-hidden="true">
+                        <div class="menu-item">cdn-origin-westus2.contoso.internal</div>
+                        <div class="menu-item">api-fallback-prod.eastus.cloudapp.azure.com</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>Dynamic tooltip update</h2>
+                <div id="dynamic-tooltip-value" class="value">Hover/inspect after toggling title updates</div>
+                <button id="tooltip-toggle" type="button">Toggle delayed tooltip</button>
+            </section>
+        </main>
+    </div>
+    <script src="./app.js"></script>
+</body>
+</html>

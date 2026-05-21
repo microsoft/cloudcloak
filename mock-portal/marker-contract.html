@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Marker Contract</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="shell">
+        <aside class="nav">
+            <h1>Mock Portal</h1>
+            <a href="./index.html">Overview</a>
+            <a href="./marker-contract.html">Marker contract</a>
+        </aside>
+        <main class="main">
+            <section class="card">
+                <h2>Explicit opt-in markers</h2>
+                <div class="form-row">
+                    <div class="label">data-cloudcloak="cloak"</div>
+                    <div class="value" data-cloudcloak="cloak">team-specific-sensitive-value</div>
+                    <span></span>
+                </div>
+                <div class="form-row">
+                    <div class="label">data-cloudcloak="mask"</div>
+                    <div class="value" data-cloudcloak="mask">masked-by-contract@example.com</div>
+                    <span></span>
+                </div>
+                <div class="form-row">
+                    <div class="label">data-cloudcloak="sensitive"</div>
+                    <div class="value" data-cloudcloak="sensitive">https://internal-only.contoso.example/path</div>
+                    <span></span>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

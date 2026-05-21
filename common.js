@@ -1,4 +1,4 @@
-export const supportedDomains = [
+const baseSupportedDomains = [
     'https://portal.azure.com',
     'https://ms.portal.azure.com',
     'https://rc.portal.azure.com',
@@ -23,7 +23,27 @@ export const supportedDomains = [
     'https://*.reactblade.portal.azure.net'
 ];
 
-const exactSupportedHostPermissionPatterns = supportedDomains
+export const localTestHostPermissionPatterns = [
+    'http://localhost:4173/*',
+    'http://127.0.0.1:4173/*'
+];
+
+export const localTestDomains = localTestHostPermissionPatterns.map((pattern) => pattern.replace('/*', ''));
+
+function shouldEnableLocalTestDomains() {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.getManifest) {
+        return false;
+    }
+
+    const hostPermissions = chrome.runtime.getManifest().host_permissions || [];
+    return localTestHostPermissionPatterns.some((pattern) => hostPermissions.includes(pattern));
+}
+
+export const supportedDomains = shouldEnableLocalTestDomains()
+    ? [...baseSupportedDomains, ...localTestDomains]
+    : [...baseSupportedDomains];
+
+const exactSupportedHostPermissionPatterns = baseSupportedDomains
     .filter((supportedDomain) => !supportedDomain.includes('*'))
     .map((supportedDomain) => `${supportedDomain}/*`);
 

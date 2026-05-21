@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 import {
+    localTestHostPermissionPatterns,
     supportedDomains,
     supportedHostPermissionPatterns
 } from '../common.js';
@@ -48,4 +49,15 @@ test('supported host permission patterns cover supported domains', () => {
         .filter((supportedUrl) => !supportedHostPermissionPatterns.some((pattern) => matchesHostPermission(supportedUrl, pattern)));
 
     assert.deepEqual(uncoveredSupportedUrls, []);
+});
+
+test('local test host permissions stay out of the production allowlist', () => {
+    assert.deepEqual(localTestHostPermissionPatterns, [
+        'http://localhost:4173/*',
+        'http://127.0.0.1:4173/*'
+    ]);
+    assert.equal(
+        supportedHostPermissionPatterns.some((pattern) => pattern.includes('localhost') || pattern.includes('127.0.0.1')),
+        false
+    );
 });

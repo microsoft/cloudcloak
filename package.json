@@ -1,3 +1,8 @@
 {
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev:extension": "node scripts/build-dev-extension.mjs",
+    "dev:site": "node scripts/serve-mock-portal.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
 }

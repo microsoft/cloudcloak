@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Cloak Mock Portal</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="shell">
+        <aside class="nav">
+            <h1>Mock Portal</h1>
+            <a href="./index.html">Overview</a>
+            <a href="./storage-access-keys.html">Storage access keys</a>
+            <a href="./ai-studio-metadata.html">AI Studio metadata</a>
+            <a href="./dropdown-tooltip.html">Dropdowns and tooltips</a>
+            <a href="./secure-fields.html">Secure fields</a>
+            <a href="./marker-contract.html">Marker contract</a>
+        </aside>
+        <main class="main">
+            <div class="command-bar">
+                <button type="button">Refresh</button>
+                <button type="button">Open in portal</button>
+            </div>
+
+            <section class="blade">
+                <h2>Cloud Cloak local test harness <span class="pill">dev only</span></h2>
+                <p class="hint">
+                    This site mimics Azure-style layouts and dynamic behaviors so you can validate masking locally without using real portal data.
+                </p>
+            </section>
+
+            <section class="card">
+                <h3>Available scenarios</h3>
+                <div class="row">
+                    <div class="label">Storage reveal flows</div>
+                    <div class="value">Show/Hide keys and Generate SAS output</div>
+                    <a class="button" href="./storage-access-keys.html">Open</a>
+                </div>
+                <div class="row">
+                    <div class="label">AI Studio metadata</div>
+                    <div class="value">Created by, Modified by, Endpoint URI</div>
+                    <a class="button" href="./ai-studio-metadata.html">Open</a>
+                </div>
+                <div class="row">
+                    <div class="label">Dropdown and tooltip timing</div>
+                    <div class="value">Menu flashes, delayed titles, hidden content</div>
+                    <a class="button" href="./dropdown-tooltip.html">Open</a>
+                </div>
+                <div class="row">
+                    <div class="label">Secure-like labeled fields</div>
+                    <div class="value">Passwords, tokens, client secrets, connection strings</div>
+                    <a class="button" href="./secure-fields.html">Open</a>
+                </div>
+                <div class="row">
+                    <div class="label">Explicit marker contract</div>
+                    <div class="value">data-cloudcloak opt-in examples</div>
+                    <a class="button" href="./marker-contract.html">Open</a>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,142 @@
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+.shell {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+}
+
+.nav {
+    background: #111827;
+    padding: 20px 16px;
+    border-right: 1px solid #1f2937;
+}
+
+.nav h1 {
+    font-size: 18px;
+    margin: 0 0 16px;
+}
+
+.nav a {
+    display: block;
+    color: #cbd5e1;
+    text-decoration: none;
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 4px;
+}
+
+.nav a:hover {
+    background: #1e293b;
+}
+
+.main {
+    padding: 20px 28px 40px;
+}
+
+.command-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.command-bar button,
+.button {
+    background: #2563eb;
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.blade,
+.card {
+    background: #111827;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.row,
+.form-row {
+    display: grid;
+    grid-template-columns: 220px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #1f2937;
+}
+
+.row:last-child,
+.form-row:last-child {
+    border-bottom: 0;
+}
+
+.label {
+    color: #93c5fd;
+    font-weight: 600;
+}
+
+.value,
+.output,
+.content,
+.textbox-like {
+    background: #0b1220;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 10px;
+    min-height: 20px;
+    word-break: break-all;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 260px;
+    background: #0b1220;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.menu[hidden] {
+    display: none;
+}
+
+.menu-item {
+    display: block;
+    padding: 8px 10px;
+    border-radius: 6px;
+}
+
+.menu-item:hover {
+    background: #1e293b;
+}
+
+.hint {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.pill {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 2px 8px;
+    background: #1d4ed8;
+    font-size: 12px;
+    margin-left: 8px;
+}
