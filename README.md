@@ -22,7 +22,7 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 1. Navigate to the [Azure Portal](https://portal.azure.com/), [Entra](https://entra.microsoft.com), [GitHub](https://github.com), etc.
 2. Click the extension icon in the toolbar to toggle it from `OFF` to `ON`
 3. Confirm that sensitive data like IP addresses (IPv4 and IPv6), GUIDs, and email addresses are blurred-out
-4. On `github.com` and supported `*.github.com` pages, enable `Hide GitHub Staff Bar` to remove GitHub's staff bar when that bar is present
+4. On `github.com` and supported `*.github.com` pages, enable `Hide GitHub Staff Bar` to remove GitHub's classic staff bar or newer UI Service staffbar when either is present
 
 ## Reporting Issues
 

@@ -570,7 +570,7 @@ if (window.cloakScriptInjected !== true) {
                     return;
                 }
 
-                const staffBar = document.querySelector("#serverstats[aria-label='Staff Bar'], section#serverstats.server-stats");
+                const staffBar = document.querySelector("#serverstats[aria-label='Staff Bar'], section#serverstats.server-stats, aside[aria-label='Staffbar']");
                 const originalDisplayAttribute = "data-cloudcloak-staffbar-display";
                 if (!staffBar) {
                     return;
