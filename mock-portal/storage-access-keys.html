@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Storage Access Keys</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="shell">
+        <aside class="nav">
+            <h1>Mock Portal</h1>
+            <a href="./index.html">Overview</a>
+            <a href="./storage-access-keys.html">Storage access keys</a>
+        </aside>
+        <main class="main">
+            <section class="blade">
+                <h2>Storage account access keys</h2>
+                <p class="hint">Exercise Show/Hide and Generate SAS flows.</p>
+            </section>
+
+            <section class="card">
+                <div class="form-row" role="row">
+                    <div class="label">Key 1</div>
+                    <div id="key1-value" class="value">************************************</div>
+                    <button id="show-key1" type="button">Show</button>
+                </div>
+                <div class="form-row" role="row">
+                    <div class="label">Connection string</div>
+                    <div class="value">DefaultEndpointsProtocol=https;AccountName=mockaccount;AccountKey=************************************;EndpointSuffix=core.windows.net</div>
+                    <button type="button">Copy</button>
+                </div>
+                <div class="form-row" role="row">
+                    <div class="label">Shared access signature</div>
+                    <div id="sas-output" class="output">No SAS generated yet</div>
+                    <button id="generate-sas" type="button">Generate SAS and connection string</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="./app.js"></script>
+</body>
+</html>

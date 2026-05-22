@@ -23,19 +23,29 @@ function getCurrentStateFromStorageAndUpdateBadge() {
   });
 }
 
-// Inject the cloak script into the current tab/iframes
-async function injectScripts(tabId, frameIds, allFrames) {
-  allFrames = false;
+// Inject the cloak script into the supported frames of the current tab
+async function injectScripts(tabId, frameIds = [0]) {
+  if (!tabId || !frameIds?.length) {
+    return;
+  }
+
   await chrome.scripting.executeScript({
-    target: { tabId, allFrames, frameIds },
+    target: { tabId, frameIds },
     files: ['cloak.js']
   });
 }
 
+async function getSupportedFrameIds(tabId) {
+  const frameDetails = await chrome.webNavigation.getAllFrames({ tabId });
+  return (frameDetails || [])
+    .filter((frameDetail) => isSupportedUrl(frameDetail.url))
+    .map((frameDetail) => frameDetail.frameId);
+}
+
 // This event is triggered when navigation occurs, which can include loading iframes
 chrome.webNavigation.onCommitted.addListener(async (details) => {
-  if (details.frameId !== 0) { // This is an iframe
-    await injectScripts(details.tabId, [details.frameId], false);
+  if (details.frameId !== 0 && isSupportedUrl(details.url)) { // This is a supported iframe
+    await injectScripts(details.tabId, [details.frameId]);
   }
 }, { url: [{ urlMatches: 'https://*/*' }] });
 
@@ -45,7 +55,8 @@ async function tabsEventHandler() {
       const tabUrl = tabs[0]?.url;
       const tabId = tabs[0]?.id;
       if (isSupportedUrl(tabUrl)) {
-        await injectScripts(tabId, null, true);
+        const supportedFrameIds = await getSupportedFrameIds(tabId);
+        await injectScripts(tabId, supportedFrameIds);
         getCurrentStateFromStorageAndUpdateBadge();
       }
     

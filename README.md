@@ -22,6 +22,7 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 1. Navigate to the [Azure Portal](https://portal.azure.com/), [Entra](https://entra.microsoft.com), [GitHub](https://github.com), etc.
 2. Click the extension icon in the toolbar to toggle it from `OFF` to `ON`
 3. Confirm that sensitive data like IP addresses (IPv4 and IPv6), GUIDs, and email addresses are blurred-out
+4. On `github.com` and supported `*.github.com` pages, enable `Hide GitHub Staff Bar` to remove GitHub's classic staff bar or newer UI Service staffbar when either is present; general masking stays limited to GitHub settings pages so source and diff views are left alone
 
 ## Reporting Issues
 
@@ -29,3 +30,31 @@ You can consider this the next-version/update to [Azure Mask](https://github.com
 2. Look for an existing issue that describes your scenario
 3. OR create a new issue
    - Please provide detailed steps to reproduce the issue
+
+## Opt-in page markers
+
+If a product team controls the page markup and wants to explicitly opt content into masking, Cloud Cloak now honors a simple marker contract:
+
+- `data-cloudcloak="cloak"`
+- `data-cloudcloak="mask"`
+- `data-cloudcloak="sensitive"`
+
+Applying one of those attributes to an element tells the extension to blur that element even when the content would not otherwise match a regex or page-specific rule. This is optional and additive; when the marker is absent, Cloud Cloak falls back to its normal masking behavior.
+
+## Local mock portal for testing
+
+For local manual testing, the repo now includes a lightweight Azure-like mock site under `mock-portal/`.
+
+1. Start the local site:
+   - `npm run dev:site`
+2. Build the dev manifest that allows localhost:
+   - `npm run dev:extension`
+3. In Edge or Chrome, load the extension from the repo folder, but use the generated `dist/manifest.json` for the dev-only localhost-enabled build.
+4. Open `http://localhost:4173/` and walk through the scenario pages:
+   - Storage reveal flows
+   - AI Studio metadata
+   - Dropdowns and tooltips
+   - Secure labeled fields
+   - Explicit `data-cloudcloak` markers
+
+This local harness uses fake data and is intended for regression testing of masking behavior, not for a full Azure Portal clone.

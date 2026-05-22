@@ -1,4 +1,4 @@
-export const supportedDomains = [
+const baseSupportedDomains = [
     'https://portal.azure.com',
     'https://ms.portal.azure.com',
     'https://rc.portal.azure.com',
@@ -13,6 +13,7 @@ export const supportedDomains = [
     'https://make.preview.powerapps.com',
     'https://msazure.visualstudio.com',
     'https://github.com',
+    'https://*.github.com',
     'https://copilotstudio.microsoft.com',
     'https://copilotstudio.preview.microsoft.com',
     'https://reactblade-ms.portal.azure.net',
@@ -21,6 +22,39 @@ export const supportedDomains = [
     'https://reactblade*.portal.azure.net',
     'https://*.reactblade-ms.portal.azure.net',
     'https://*.reactblade.portal.azure.net'
+];
+
+export const localTestHostPermissionPatterns = [
+    'http://localhost:4173/*',
+    'http://127.0.0.1:4173/*'
+];
+
+export const localTestDomains = localTestHostPermissionPatterns.map((pattern) => pattern.replace('/*', ''));
+
+function shouldEnableLocalTestDomains() {
+    if (typeof chrome === 'undefined' || !chrome.runtime?.getManifest) {
+        return false;
+    }
+
+    const hostPermissions = chrome.runtime.getManifest().host_permissions || [];
+    return localTestHostPermissionPatterns.some((pattern) => hostPermissions.includes(pattern));
+}
+
+export const supportedDomains = shouldEnableLocalTestDomains()
+    ? [...baseSupportedDomains, ...localTestDomains]
+    : [...baseSupportedDomains];
+
+const exactSupportedHostPermissionPatterns = baseSupportedDomains
+    .filter((supportedDomain) => !supportedDomain.includes('*'))
+    .map((supportedDomain) => `${supportedDomain}/*`);
+
+export const supportedHostPermissionPatterns = [
+    ...exactSupportedHostPermissionPatterns,
+    'https://*.reactblade-ms.portal.azure.net/*',
+    'https://*.reactblade.portal.azure.net/*',
+    'https://*.github.com/*',
+    // Chrome host match patterns cannot express reactblade-ms*.portal.azure.net or reactblade*.portal.azure.net.
+    'https://*.portal.azure.net/*'
 ];
 
 function escapeRegex(value) {
@@ -61,6 +95,41 @@ export function isSupportedUrl(url) {
             supportedDomainMatcher.hostnameRegex.test(currentUrl.hostname);
     });
 }
+
+export function shouldHideGitHubStaffBar(url) {
+    if (!url) {
+        return false;
+    }
+
+    return isGitHubUrl(url);
+}
+
+export function isGitHubUrl(url) {
+    if (!url) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+    return currentUrl.protocol === 'https:' &&
+        (currentUrl.hostname === 'github.com' || currentUrl.hostname.endsWith('.github.com'));
+}
+
+export function isGitHubSettingsUrl(url) {
+    if (!isGitHubUrl(url)) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+    return currentUrl.pathname.includes('/settings');
+}
+
+export const cloakObserverOptions = {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ["title", "class", "style", "hidden", "aria-expanded", "aria-hidden", "data-cloudcloak"]
+};
 
 export function normalizePageRuleText(value) {
     return (value || "")
@@ -108,7 +177,12 @@ export const pageSpecificRules = [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre"
         ],
         nearbyActionLabels: [
             "show",
@@ -118,6 +192,7 @@ export const pageSpecificRules = [
             "generate sas",
             "generate sas and connection string"
         ],
+        maskClosestSelector: "[class*='fxc-gc'], [class*='form'], [class*='row'], [role='row'], [role='group']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]
@@ -137,19 +212,31 @@ export const pageSpecificRules = [
             "key 2",
             "api key",
             "access key",
-            "secret"
+            "secret",
+            "created by",
+            "modified by",
+            "endpoint",
+            "endpoint uri",
+            "base url"
         ],
         valueSelectors: [
             "input",
             "textarea",
             "[role='textbox']",
-            "[class*='value']"
+            "[class*='value']",
+            "[class*='output']",
+            "[class*='content']",
+            "[class*='text']",
+            "code",
+            "pre",
+            "a[href]"
         ],
         nearbyActionLabels: [
             "show",
             "hide",
             "copy"
         ],
+        maskClosestSelector: "[class*='form'], [class*='row'], [role='row'], [role='group'], [class*='section']",
         minimumValueLength: 16,
         actionSearchDepth: 4,
         interactionRescanDelays: [0, 75, 250, 500, 1000]
@@ -241,6 +328,12 @@ export const cloakablePatterns = [
         id: 'subscriptioninfo',
         label: 'Subscription Info',
         category: 'Subscription Info',
+        regexes: []
+    },
+    {
+        id: 'githubstaffbar',
+        label: 'Hide GitHub Staff Bar',
+        category: 'GitHub',
         regexes: []
     }
 ];

@@ -5,13 +5,21 @@ if (window.cloakScriptInjected !== true) {
         const src = chrome.runtime.getURL("./common.js");
         import(src).then((commonModule) => {
             const cloakablePatterns = commonModule.cloakablePatterns;
+            const cloakObserverOptions = commonModule.cloakObserverOptions;
             const matchesPageRuleLabel = commonModule.matchesPageRuleLabel;
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
+            const isGitHubUrl = commonModule.isGitHubUrl;
+            const isGitHubSettingsUrl = commonModule.isGitHubSettingsUrl;
             const normalizePageRuleText = commonModule.normalizePageRuleText;
+            const shouldHideGitHubStaffBar = commonModule.shouldHideGitHubStaffBar;
             const blurFilter = "blur(5px)";
             const maskText = "*****";
             const resetBlur = "none";
+
+            function shouldSkipGeneralMasking() {
+                return isGitHubUrl(window.location.href) && !isGitHubSettingsUrl(window.location.href);
+            }
 
             window.regexPatternsArray;
             window.toggleStates;
@@ -62,6 +70,31 @@ if (window.cloakScriptInjected !== true) {
 
             function getPageRuleMaskAttribute(ruleId) {
                 return `data-cloudcloak-page-rule-${ruleId}`;
+            }
+
+            function getExplicitCloakMarkerValue(element) {
+                if (!element || !element.getAttribute) {
+                    return "";
+                }
+
+                return normalizePageRuleText(element.getAttribute("data-cloudcloak"));
+            }
+
+            function shouldForceMaskElement(element) {
+                const markerValue = getExplicitCloakMarkerValue(element);
+                return markerValue === "cloak" || markerValue === "mask" || markerValue === "sensitive";
+            }
+
+            function getPageRuleMaskTarget(element, rule) {
+                if (!element) {
+                    return null;
+                }
+
+                if (!rule?.maskClosestSelector) {
+                    return element;
+                }
+
+                return element.closest(rule.maskClosestSelector) || element;
             }
 
             function getActivePageRules() {
@@ -222,6 +255,7 @@ if (window.cloakScriptInjected !== true) {
             function runContextAwarePageRule(rule, shouldCloak) {
                 const candidateSelectors = (rule.valueSelectors || []).join(", ");
                 const matchedElements = [];
+                const matchedElementSet = new Set();
                 if (candidateSelectors) {
                     document.querySelectorAll(candidateSelectors).forEach((element) => {
                         const elementValue = getElementMaskValue(element);
@@ -234,7 +268,11 @@ if (window.cloakScriptInjected !== true) {
                         const hasNearbyActions = meetsMinimumValueLength && elementHasNearbyRuleActions(element, rule);
 
                         if (matchesRuleContext || hasNearbyActions) {
-                            matchedElements.push(element);
+                            const maskTarget = getPageRuleMaskTarget(element, rule);
+                            if (maskTarget && !matchedElementSet.has(maskTarget)) {
+                                matchedElementSet.add(maskTarget);
+                                matchedElements.push(maskTarget);
+                            }
                         }
                     });
                 }
@@ -293,6 +331,7 @@ if (window.cloakScriptInjected !== true) {
                     schedulePageSpecificRuleRescan();
                 };
 
+                document.addEventListener("mousedown", scheduleTrustedRescan, true);
                 document.addEventListener("click", scheduleTrustedRescan, true);
                 document.addEventListener("keydown", scheduleTrustedRescan, true);
                 window.pageRuleInteractionHandlersRegistered = true;
@@ -399,7 +438,7 @@ if (window.cloakScriptInjected !== true) {
                 }
             }
 
-            function applyFilterOnNode(node, applyFilter) {
+            function applyFilterOnNode(node, applyFilter, shouldRecurse = true) {
                 // Ignore script and style tags
                 if (node.nodeName === "SCRIPT" || node.nodeName === "STYLE" || node.nodeName === "svg" || node.nodeType == Node.COMMENT_NODE) {
                     return;
@@ -408,19 +447,26 @@ if (window.cloakScriptInjected !== true) {
                 if (node.nodeType === Node.TEXT_NODE || node.nodeName === "INPUT") {
                     tryMatchAndApplyFilterOnTextNode(node, applyFilter);
                 } else if (node.nodeType === Node.ELEMENT_NODE) {
-                    // Handle child nodes
-                    for (const child of node.childNodes) {
-                        if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
-                            break;
-                        }
+                    tryApplyFilterOnElementTitle(node, applyFilter, shouldForceMaskElement(node));
+                    if (shouldForceMaskElement(node)) {
+                        node.style.filter = applyFilter ? blurFilter : resetBlur;
+                    }
 
-                        // Recurse into child nodes
-                        if (child.childNodes && child.childNodes.length > 0) {
-                            applyFilterOnNode(child, applyFilter);
+                    // Handle child nodes
+                    if (shouldRecurse) {
+                        for (const child of node.childNodes) {
+                            if ((child.nodeType === Node.TEXT_NODE || child.nodeName === "INPUT") && tryMatchAndApplyFilterOnTextNode(child, applyFilter)) {
+                                break;
+                            }
+
+                            // Recurse into child nodes
+                            if (child.childNodes && child.childNodes.length > 0) {
+                                applyFilterOnNode(child, applyFilter);
+                            }
                         }
                     }
 
-                    if (node.shadowRoot && node.shadowRoot.childNodes.length > 0) {
+                    if (shouldRecurse && node.shadowRoot && node.shadowRoot.childNodes.length > 0) {
                         applyFilterOnNode(node.shadowRoot, applyFilter);
                     }
                 }
@@ -460,7 +506,7 @@ if (window.cloakScriptInjected !== true) {
             }
 
             function specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter) {
-                const passwordLikeText = ["password", "key", "secret"];
+                const passwordLikeText = ["password", "key", "secret", "token", "connection string", "client secret"];
                 const filter = applyFilter ? blurFilter : resetBlur;
 
                 // Find all input password fields and apply the filter so they appear blurred
@@ -498,8 +544,73 @@ if (window.cloakScriptInjected !== true) {
                         }
                     });
                 });
+
+                const secureFieldContainers = document.querySelectorAll("[class*='form'], [class*='row'], [role='row'], [role='group'], [class*='section']");
+                secureFieldContainers.forEach((container) => {
+                    const labelCandidates = container.querySelectorAll("label, [role='label'], [class*='label'], [class*='header'], dt, legend");
+                    const hasSecureLabel = Array.from(labelCandidates).some((label) =>
+                        passwordLikeText.some((pwdLikeText) => matchesPageRuleLabel(pwdLikeText, label.textContent))
+                    );
+                    if (!hasSecureLabel) {
+                        return;
+                    }
+
+                    const valueCandidates = container.querySelectorAll("input:not([type='password']), textarea, [role='textbox'], [class*='value'], [class*='output'], [class*='content'], [class*='text'], code, pre, a[href]");
+                    valueCandidates.forEach((valueCandidate) => {
+                        if (labelCandidates.length > 0 && Array.from(labelCandidates).some((label) => label.contains(valueCandidate))) {
+                            return;
+                        }
+
+                        const valueText = getElementMaskValue(valueCandidate);
+                        if (!valueText || valueText.length < 3) {
+                            return;
+                        }
+
+                        valueCandidate.style.filter = filter;
+                        tryApplyFilterOnElementTitle(valueCandidate, applyFilter, true);
+                    });
+                });
             }
+            function setGitHubStaffBarVisibility(shouldHide) {
+                if (!shouldHideGitHubStaffBar(window.location.href)) {
+                    return;
+                }
+
+                const staffBar = document.querySelector("#serverstats[aria-label='Staff Bar'], section#serverstats.server-stats, aside[aria-label='Staffbar']");
+                const originalDisplayAttribute = "data-cloudcloak-staffbar-display";
+                if (!staffBar) {
+                    return;
+                }
+
+                if (shouldHide) {
+                    if (!staffBar.hasAttribute(originalDisplayAttribute)) {
+                        staffBar.setAttribute(originalDisplayAttribute, staffBar.style.display || "");
+                    }
+                    if (staffBar.style.display !== "none") {
+                        staffBar.style.display = "none";
+                    }
+                    return;
+                }
+
+                if (!staffBar.hasAttribute(originalDisplayAttribute)) {
+                    return;
+                }
+
+                const originalDisplay = staffBar.getAttribute(originalDisplayAttribute);
+                if (originalDisplay) {
+                    staffBar.style.display = originalDisplay;
+                } else {
+                    staffBar.style.removeProperty("display");
+                }
+                staffBar.removeAttribute(originalDisplayAttribute);
+            }
+
             function getAllNodesAndApplyFilter(applyFilter) {
+                setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar && applyFilter);
+                if (shouldSkipGeneralMasking()) {
+                    return;
+                }
+
                 if (document.body) {
                     applyFilterOnNode(document.body, applyFilter);
                 }
@@ -513,14 +624,17 @@ if (window.cloakScriptInjected !== true) {
                 updateRegexPatterns();
                 ensurePageRuleInteractionHandlers();
 
-                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo) {
+                const shouldRunGeneralMasking = !shouldSkipGeneralMasking() && (
+                    window.regexPatternsArray?.length > 0 ||
+                    window.toggleStates?.secrets ||
+                    window.toggleStates?.subscriptioninfo
+                );
+                const shouldRunGitHubStaffBar = isGitHubUrl(window.location.href) && !!window.toggleStates?.githubstaffbar;
+
+                if (shouldRunGeneralMasking || shouldRunGitHubStaffBar) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
-                    window.cloakObserver && window.cloakObserver.observe(document.body, {
-                        childList: true,    // Watch for added/removed elements
-                        subtree: true,      // Watch the entire subtree of the document
-                        characterData: true // Watch for text content changes (SPA updates)
-                    });
+                    window.cloakObserver && window.cloakObserver.observe(document.body, cloakObserverOptions);
                 } else {
                     getAllNodesAndApplyFilter(false);
                     window.cloakObserver && window.cloakObserver.disconnect();
@@ -535,10 +649,19 @@ if (window.cloakScriptInjected !== true) {
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
                     // Go through the mutations and apply the filter on the added/changed nodes
+                    if (shouldSkipGeneralMasking()) {
+                        setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar /* If observer is running we are in cloak mode */);
+                        return;
+                    }
+
                     for (const mutation of mutationList) {
                         if (mutation.type === 'characterData') {
                             // Text content changed in-place (common in SPAs like Azure Portal)
                             applyFilterOnNode(mutation.target, true);
+                        }
+                        if (mutation.type === 'attributes') {
+                            const shouldDeepScan = mutation.attributeName !== 'class' && mutation.attributeName !== 'style';
+                            applyFilterOnNode(mutation.target, true, shouldDeepScan);
                         }
                         mutation.addedNodes.forEach((node) => {
                             applyFilterOnNode(node, true /* If observer is running we are in cloak mode */);
@@ -550,6 +673,7 @@ if (window.cloakScriptInjected !== true) {
                     window.secretHandlingTimeout = setTimeout(() => {
                         specialHandlingForPasswordFieldsAndTablesWithSecrets(true /* If observer is running we are in cloak mode */);
                         specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && true /* If observer is running we are in cloak mode */);
+                        setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar /* If observer is running we are in cloak mode */);
                         runPageSpecificRules(true /* If observer is running we are in cloak mode */);
                     }, 50);
                 });

@@ -21,6 +21,8 @@ test('normalizes page rule text for label matching', () => {
 test('matches page rule labels on word boundaries instead of substrings', () => {
     assert.equal(matchesPageRuleLabel('key', 'Storage account key'), true);
     assert.equal(matchesPageRuleLabel('connection string', 'Primary connection string'), true);
+    assert.equal(matchesPageRuleLabel('client secret', 'Client Secret value'), true);
+    assert.equal(matchesPageRuleLabel('token', 'Access token'), true);
     assert.equal(matchesPageRuleLabel('key', 'Search keywords'), false);
     assert.equal(matchesPageRuleLabel('key', 'Keyboard shortcut'), false);
     assert.equal(matchesPageRuleLabel('key 1', 'Key 1'), true);
@@ -44,6 +46,13 @@ test('matches Azure Storage access key routes', () => {
     );
 });
 
+test('Azure Storage access key rule targets reveal-flow containers and output-like elements', () => {
+    assert.equal(azureStorageAccessKeyRule.maskClosestSelector.includes("[role='row']"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("[class*='output']"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("code"), true);
+    assert.equal(azureStorageAccessKeyRule.valueSelectors.includes("pre"), true);
+});
+
 test('matches Azure AI Studio key routes', () => {
     assert.equal(
         matchesPageRuleUrl(
@@ -60,6 +69,18 @@ test('matches Azure AI Studio key routes', () => {
         ),
         true
     );
+});
+
+test('Azure AI Studio rule covers metadata fields and output-like containers', () => {
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('created by'), true);
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('modified by'), true);
+    assert.equal(azureAiStudioKeysRule.contextLabels.includes('endpoint uri'), true);
+    const hasOutputClassSelector = azureAiStudioKeysRule.valueSelectors.some((selector) =>
+        /\[class\*=['"]output['"]\]/.test(selector)
+    );
+    assert.equal(hasOutputClassSelector, true);
+    assert.equal(azureAiStudioKeysRule.valueSelectors.includes('a[href]'), true);
+    assert.equal(azureAiStudioKeysRule.maskClosestSelector.includes("[role='row']"), true);
 });
 
 test('does not match unrelated Azure Storage routes', () => {
