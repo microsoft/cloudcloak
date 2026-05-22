@@ -114,6 +114,15 @@ export function isGitHubUrl(url) {
         (currentUrl.hostname === 'github.com' || currentUrl.hostname.endsWith('.github.com'));
 }
 
+export function isGitHubSettingsUrl(url) {
+    if (!isGitHubUrl(url)) {
+        return false;
+    }
+
+    const currentUrl = new URL(url);
+    return currentUrl.pathname.includes('/settings');
+}
+
 export const cloakObserverOptions = {
     childList: true,
     subtree: true,

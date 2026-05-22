@@ -10,12 +10,16 @@ if (window.cloakScriptInjected !== true) {
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
             const isGitHubUrl = commonModule.isGitHubUrl;
+            const isGitHubSettingsUrl = commonModule.isGitHubSettingsUrl;
             const normalizePageRuleText = commonModule.normalizePageRuleText;
             const shouldHideGitHubStaffBar = commonModule.shouldHideGitHubStaffBar;
             const blurFilter = "blur(5px)";
             const maskText = "*****";
             const resetBlur = "none";
-            const shouldSkipGeneralMasking = isGitHubUrl(window.location.href);
+
+            function shouldSkipGeneralMasking() {
+                return isGitHubUrl(window.location.href) && !isGitHubSettingsUrl(window.location.href);
+            }
 
             window.regexPatternsArray;
             window.toggleStates;
@@ -603,7 +607,7 @@ if (window.cloakScriptInjected !== true) {
 
             function getAllNodesAndApplyFilter(applyFilter) {
                 setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar && applyFilter);
-                if (shouldSkipGeneralMasking) {
+                if (shouldSkipGeneralMasking()) {
                     return;
                 }
 
@@ -620,12 +624,12 @@ if (window.cloakScriptInjected !== true) {
                 updateRegexPatterns();
                 ensurePageRuleInteractionHandlers();
 
-                const shouldRunGeneralMasking = !shouldSkipGeneralMasking && (
+                const shouldRunGeneralMasking = !shouldSkipGeneralMasking() && (
                     window.regexPatternsArray?.length > 0 ||
                     window.toggleStates?.secrets ||
                     window.toggleStates?.subscriptioninfo
                 );
-                const shouldRunGitHubStaffBar = shouldSkipGeneralMasking && !!window.toggleStates?.githubstaffbar;
+                const shouldRunGitHubStaffBar = isGitHubUrl(window.location.href) && !!window.toggleStates?.githubstaffbar;
 
                 if (shouldRunGeneralMasking || shouldRunGitHubStaffBar) {
                     getAllNodesAndApplyFilter(true);
@@ -645,7 +649,7 @@ if (window.cloakScriptInjected !== true) {
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
                     // Go through the mutations and apply the filter on the added/changed nodes
-                    if (shouldSkipGeneralMasking) {
+                    if (shouldSkipGeneralMasking()) {
                         setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar /* If observer is running we are in cloak mode */);
                         return;
                     }
