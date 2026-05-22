@@ -101,6 +101,14 @@ export function shouldHideGitHubStaffBar(url) {
         return false;
     }
 
+    return isGitHubUrl(url);
+}
+
+export function isGitHubUrl(url) {
+    if (!url) {
+        return false;
+    }
+
     const currentUrl = new URL(url);
     return currentUrl.protocol === 'https:' &&
         (currentUrl.hostname === 'github.com' || currentUrl.hostname.endsWith('.github.com'));

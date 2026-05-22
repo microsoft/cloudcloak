@@ -1,9 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { shouldHideGitHubStaffBar } from '../common.js';
+import { isGitHubUrl, shouldHideGitHubStaffBar } from '../common.js';
 
 test('targets staff bar removal on github.com and github.com subdomains', () => {
+    assert.equal(isGitHubUrl('https://github.com/microsoft/cloudcloak/pull/82'), true);
+    assert.equal(isGitHubUrl('https://gist.github.com/microsoft'), true);
+    assert.equal(isGitHubUrl('https://docs.github.com/en'), true);
+    assert.equal(isGitHubUrl('https://raw.githubusercontent.com/microsoft/cloudcloak/main/README.md'), false);
+    assert.equal(isGitHubUrl('http://github.com/microsoft/cloudcloak'), false);
+    assert.equal(isGitHubUrl('https://notgithub.com/microsoft'), false);
+    assert.equal(isGitHubUrl(''), false);
+
     assert.equal(shouldHideGitHubStaffBar('https://github.com/microsoft/cloudcloak/pull/82'), true);
     assert.equal(shouldHideGitHubStaffBar('https://github.com/'), true);
     assert.equal(shouldHideGitHubStaffBar('https://gist.github.com/microsoft'), true);

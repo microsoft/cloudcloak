@@ -9,11 +9,13 @@ if (window.cloakScriptInjected !== true) {
             const matchesPageRuleLabel = commonModule.matchesPageRuleLabel;
             const pageSpecificRules = commonModule.pageSpecificRules || [];
             const isPageRuleActive = commonModule.isPageRuleActive;
+            const isGitHubUrl = commonModule.isGitHubUrl;
             const normalizePageRuleText = commonModule.normalizePageRuleText;
             const shouldHideGitHubStaffBar = commonModule.shouldHideGitHubStaffBar;
             const blurFilter = "blur(5px)";
             const maskText = "*****";
             const resetBlur = "none";
+            const shouldSkipGeneralMasking = isGitHubUrl(window.location.href);
 
             window.regexPatternsArray;
             window.toggleStates;
@@ -600,13 +602,17 @@ if (window.cloakScriptInjected !== true) {
             }
 
             function getAllNodesAndApplyFilter(applyFilter) {
+                setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar && applyFilter);
+                if (shouldSkipGeneralMasking) {
+                    return;
+                }
+
                 if (document.body) {
                     applyFilterOnNode(document.body, applyFilter);
                 }
 
                 specialHandlingForPasswordFieldsAndTablesWithSecrets(applyFilter);
                 specialHandlingForAzurePortalEssentialsValues(!!window.toggleStates?.subscriptioninfo && applyFilter);
-                setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar && applyFilter);
                 runPageSpecificRules(applyFilter);
             }
             function toggleCloak() {
@@ -614,7 +620,14 @@ if (window.cloakScriptInjected !== true) {
                 updateRegexPatterns();
                 ensurePageRuleInteractionHandlers();
 
-                if (window.regexPatternsArray?.length > 0 || window.toggleStates?.secrets || window.toggleStates?.subscriptioninfo || window.toggleStates?.githubstaffbar) {
+                const shouldRunGeneralMasking = !shouldSkipGeneralMasking && (
+                    window.regexPatternsArray?.length > 0 ||
+                    window.toggleStates?.secrets ||
+                    window.toggleStates?.subscriptioninfo
+                );
+                const shouldRunGitHubStaffBar = shouldSkipGeneralMasking && !!window.toggleStates?.githubstaffbar;
+
+                if (shouldRunGeneralMasking || shouldRunGitHubStaffBar) {
                     getAllNodesAndApplyFilter(true);
                     window.cloakObserver && window.cloakObserver.disconnect();
                     window.cloakObserver && window.cloakObserver.observe(document.body, cloakObserverOptions);
@@ -632,6 +645,11 @@ if (window.cloakScriptInjected !== true) {
             if (!window.cloakObserver) {
                 window.cloakObserver = new MutationObserver((mutationList) => {
                     // Go through the mutations and apply the filter on the added/changed nodes
+                    if (shouldSkipGeneralMasking) {
+                        setGitHubStaffBarVisibility(!!window.toggleStates?.githubstaffbar /* If observer is running we are in cloak mode */);
+                        return;
+                    }
+
                     for (const mutation of mutationList) {
                         if (mutation.type === 'characterData') {
                             // Text content changed in-place (common in SPAs like Azure Portal)
